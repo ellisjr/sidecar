@@ -274,6 +274,13 @@ function buildProviderModels() {
   return providers;
 }
 
+/** Detect if direct API fallback was applied during alias resolution */
+function detectFallback(alias, resolvedModel) {
+  if (!alias || alias.includes('/')) { return false; }
+  const val = getEffectiveAliases()[alias];
+  return !!(val && val.startsWith('openrouter/') && !resolvedModel.startsWith('openrouter/'));
+}
+
 module.exports = {
   getConfigDir,
   getConfigPath,
@@ -281,6 +288,7 @@ module.exports = {
   saveConfig,
   getDefaultAliases,
   resolveModel,
+  detectFallback,
   computeConfigHash,
   buildAliasTable,
   checkConfigChanged,

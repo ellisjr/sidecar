@@ -413,6 +413,37 @@ describe('Sidecar Config Module', () => {
     });
   });
 
+  describe('detectFallback', () => {
+    it('should return true when alias resolved via fallback', () => {
+      process.env.GEMINI_API_KEY = 'test-key';
+      jest.resetModules();
+      const config = loadModule();
+      expect(config.detectFallback('gemini', 'google/gemini-3.1-flash-lite-preview')).toBe(true);
+    });
+
+    it('should return false when alias resolved via OpenRouter', () => {
+      process.env.OPENROUTER_API_KEY = 'test-key';
+      jest.resetModules();
+      const config = loadModule();
+      expect(config.detectFallback('gemini', 'openrouter/google/gemini-3.1-flash-lite-preview')).toBe(false);
+    });
+
+    it('should return false for explicit model strings with slash', () => {
+      const config = loadModule();
+      expect(config.detectFallback('openrouter/google/gemini', 'openrouter/google/gemini')).toBe(false);
+    });
+
+    it('should return false for unknown aliases', () => {
+      const config = loadModule();
+      expect(config.detectFallback('nonexistent', 'some/model')).toBe(false);
+    });
+
+    it('should return false when alias is undefined', () => {
+      const config = loadModule();
+      expect(config.detectFallback(undefined, 'google/gemini')).toBe(false);
+    });
+  });
+
   describe('computeConfigHash', () => {
     it('should return null when no config file exists', () => {
       const config = loadModule();

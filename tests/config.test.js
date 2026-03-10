@@ -331,6 +331,14 @@ describe('Sidecar Config Module', () => {
   });
 
   describe('resolveModel - direct API fallback', () => {
+    let stderrSpy;
+    beforeEach(() => {
+      stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    });
+    afterEach(() => {
+      stderrSpy.mockRestore();
+    });
+
     it('should fall back to google/ when GEMINI_API_KEY is set but OPENROUTER_API_KEY is not', () => {
       process.env.GEMINI_API_KEY = 'test-gemini-key';
       jest.resetModules();

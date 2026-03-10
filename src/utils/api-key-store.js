@@ -35,6 +35,10 @@ const VALIDATION_ENDPOINTS = {
   google: {
     url: 'https://generativelanguage.googleapis.com/v1beta/models',
     authHeader: () => ({})
+  },
+  deepseek: {
+    url: 'https://api.deepseek.com/models',
+    authHeader: (key) => ({ 'Authorization': `Bearer ${key}` })
   }
 };
 

@@ -301,6 +301,20 @@ describe('CLI Argument Parser', () => {
       });
     });
 
+    describe('--validate-model flag', () => {
+      it('should parse --validate-model as boolean flag', () => {
+        const result = parseArgs(['start', '--validate-model', '--model', 'gemini', '--prompt', 'test']);
+        expect(result['validate-model']).toBe(true);
+        expect(result.model).toBe('gemini');
+      });
+
+      it('should not consume the next argument as a value', () => {
+        const result = parseArgs(['start', '--validate-model', '--prompt', 'test']);
+        expect(result['validate-model']).toBe(true);
+        expect(result.prompt).toBe('test');
+      });
+    });
+
     describe('--thinking option', () => {
       it('should parse --thinking option with valid effort level', () => {
         const result = parseArgs(['start', '--thinking', 'low']);

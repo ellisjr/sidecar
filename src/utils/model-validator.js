@@ -120,16 +120,19 @@ async function promptModelSelection(models, alias, provider, failedModelId) {
     if (fs.existsSync(configPath)) {
       throw new Error(
         `Cannot save model selection: config file at ${configPath} is malformed. ` +
-        `Fix it manually or run 'sidecar setup'.`
+        'Fix it manually or run \'sidecar setup\'.'
       );
     }
     config = {};
   }
   if (!config.aliases) { config.aliases = {}; }
   config.aliases[alias] = newModel;
-  saveConfig(config);
-
-  process.stderr.write(`  Saved: ${alias} → ${newModel}\n`);
+  try {
+    saveConfig(config);
+    process.stderr.write(`  Saved: ${alias} → ${newModel}\n`);
+  } catch (err) {
+    process.stderr.write(`  Warning: Could not save selection (${err.message}). Using for this session only.\n`);
+  }
   process.stderr.write(`  (To change later: sidecar setup --add-alias ${alias}=...)\n\n`);
 
   return newModel;

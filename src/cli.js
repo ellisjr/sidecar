@@ -94,7 +94,8 @@ function isBooleanFlag(key) {
      'json',
      'version',
      'help',
-     'api-keys'
+     'api-keys',
+     'validate-model'
    ];
   return booleanFlags.includes(key);
 }
@@ -313,6 +314,7 @@ Options for 'start':
   --mcp-config <path>          Path to opencode.json with MCP config
   --no-mcp                       Don't inherit MCP servers from parent LLM
   --exclude-mcp <name>           Exclude specific MCP server (repeatable)
+  --validate-model             Verify model exists on provider API (opt-in)
   --position <pos>             Window position: right (default), left, center
 
 Options for 'list':

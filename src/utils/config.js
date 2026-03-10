@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { PROVIDER_ENV_MAP } = require('./api-key-store');
+const { logger } = require('./logger');
 
 /** Default model alias map — short names to full OpenRouter model identifiers */
 const DEFAULT_ALIASES = {
@@ -83,19 +84,22 @@ function getDefaultAliases() {
   return { ...DEFAULT_ALIASES };
 }
 
-/**
- * Strip openrouter/ prefix when the direct provider API key is available
- * but OPENROUTER_API_KEY is not. Only called for alias-resolved models.
- * @param {string} model - Resolved model string (e.g. 'openrouter/google/gemini-...')
- * @returns {string} Direct model string if fallback applies, otherwise unchanged
- */
+/** Strip openrouter/ prefix when direct provider API key is available but OPENROUTER_API_KEY is not */
 function applyDirectApiFallback(model) {
   if (!model.startsWith('openrouter/') || process.env.OPENROUTER_API_KEY) {
     return model;
   }
   const direct = model.slice('openrouter/'.length);
   const envVar = PROVIDER_ENV_MAP[direct.split('/')[0]];
-  return (envVar && process.env[envVar]) ? direct : model;
+  if (envVar && process.env[envVar]) {
+    logger.warn({ msg: 'Using direct provider API (OPENROUTER_API_KEY not set)', original: model, resolved: direct });
+    process.stderr.write(
+      `Notice: Using direct ${direct.split('/')[0]} API (OPENROUTER_API_KEY not set). ` +
+      'Use --validate-model to verify model availability.\n'
+    );
+    return direct;
+  }
+  return model;
 }
 
 /**

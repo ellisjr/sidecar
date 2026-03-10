@@ -54,8 +54,8 @@ describe('api-key-store', () => {
       expect(PROVIDER_ENV_MAP.anthropic).toBe('ANTHROPIC_API_KEY');
     });
 
-    it('should have exactly 4 providers', () => {
-      expect(Object.keys(PROVIDER_ENV_MAP)).toHaveLength(4);
+    it('should have exactly 5 providers', () => {
+      expect(Object.keys(PROVIDER_ENV_MAP)).toHaveLength(5);
     });
   });
 

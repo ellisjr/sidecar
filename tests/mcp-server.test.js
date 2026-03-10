@@ -26,7 +26,7 @@ describe('MCP spawn arg building', () => {
         }),
       }));
       const { handlers: h } = require('../src/mcp-server');
-      const result = await h.sidecar_start({ prompt: 'test task', noUi: true }, '/tmp');
+      const result = await h.sidecar_start({ prompt: 'test task', noUi: true, model: 'google/gemini-test' }, '/tmp');
       const { taskId } = JSON.parse(result.content[0].text);
       const idx = capturedArgs.indexOf('--task-id');
       expect(idx).toBeGreaterThan(-1);
@@ -44,7 +44,7 @@ describe('MCP spawn arg building', () => {
         }),
       }));
       const { handlers: h } = require('../src/mcp-server');
-      await h.sidecar_start({ prompt: 'test task', noUi: true }, '/tmp');
+      await h.sidecar_start({ prompt: 'test task', noUi: true, model: 'google/gemini-test' }, '/tmp');
       const idx = capturedArgs.indexOf('--client');
       expect(idx).toBeGreaterThan(-1);
       expect(capturedArgs[idx + 1]).toBe('cowork');
@@ -61,7 +61,7 @@ describe('MCP spawn arg building', () => {
         }),
       }));
       const { handlers: h } = require('../src/mcp-server');
-      await h.sidecar_start({ prompt: 'test task', noUi: true, parentSession: 'f58f2782-fc8c-41bc-afbc-e0c130b91aaf' }, '/tmp');
+      await h.sidecar_start({ prompt: 'test task', noUi: true, model: 'google/gemini-test', parentSession: 'f58f2782-fc8c-41bc-afbc-e0c130b91aaf' }, '/tmp');
       const idx = capturedArgs.indexOf('--session-id');
       expect(idx).toBeGreaterThan(-1);
       expect(capturedArgs[idx + 1]).toBe('f58f2782-fc8c-41bc-afbc-e0c130b91aaf');
@@ -78,7 +78,7 @@ describe('MCP spawn arg building', () => {
         }),
       }));
       const { handlers: h } = require('../src/mcp-server');
-      await h.sidecar_start({ prompt: 'test task', noUi: true, timeout: 30 }, '/tmp');
+      await h.sidecar_start({ prompt: 'test task', noUi: true, model: 'google/gemini-test', timeout: 30 }, '/tmp');
       const idx = capturedArgs.indexOf('--timeout');
       expect(idx).toBeGreaterThan(-1);
       expect(capturedArgs[idx + 1]).toBe('30');
@@ -780,7 +780,7 @@ describe('MCP Server Handlers', () => {
           }),
         }));
         const { handlers: h } = require('../src/mcp-server');
-        const result = await h.sidecar_start({ prompt: 'analyze auth', noUi: false }, '/tmp');
+        const result = await h.sidecar_start({ prompt: 'analyze auth', noUi: false, model: 'google/gemini-test' }, '/tmp');
         const parsed = JSON.parse(result.content[0].text);
         expect(parsed.mode).toBe('interactive');
         expect(parsed.message).toContain('Do NOT poll');
@@ -798,7 +798,7 @@ describe('MCP Server Handlers', () => {
           }),
         }));
         const { handlers: h } = require('../src/mcp-server');
-        const result = await h.sidecar_start({ prompt: 'implement feature', noUi: true }, '/tmp');
+        const result = await h.sidecar_start({ prompt: 'implement feature', noUi: true, model: 'google/gemini-test' }, '/tmp');
         const parsed = JSON.parse(result.content[0].text);
         expect(parsed.mode).toBe('headless');
         expect(parsed.message).toContain('at least 30s');
@@ -811,7 +811,7 @@ describe('MCP Server Handlers', () => {
           spawn: jest.fn(() => ({ pid: 12345, unref: jest.fn() })),
         }));
         const { handlers: h } = require('../src/mcp-server');
-        const result = await h.sidecar_start({ prompt: 'test task', noUi: true }, '/tmp');
+        const result = await h.sidecar_start({ prompt: 'test task', noUi: true, model: 'google/gemini-test' }, '/tmp');
         expect(result.content).toHaveLength(2);
         expect(result.content[1].text).toContain('<system-reminder>');
         expect(result.content[1].text).toContain('at least 30s');
@@ -824,7 +824,7 @@ describe('MCP Server Handlers', () => {
           spawn: jest.fn(() => ({ pid: 12345, unref: jest.fn() })),
         }));
         const { handlers: h } = require('../src/mcp-server');
-        const result = await h.sidecar_start({ prompt: 'analyze auth', noUi: false }, '/tmp');
+        const result = await h.sidecar_start({ prompt: 'analyze auth', noUi: false, model: 'google/gemini-test' }, '/tmp');
         expect(result.content).toHaveLength(1);
         expect(result.content[0].text).not.toContain('<system-reminder>');
       });
@@ -1176,7 +1176,7 @@ describe('sidecar_start stderr capture', () => {
       // Ensure real fs is used (clear any leaked mock from prior tests)
       jest.doMock('fs', () => jest.requireActual('fs'));
       const { handlers: h } = require('../src/mcp-server');
-      await h.sidecar_start({ prompt: 'test task', noUi: true }, tmpDir);
+      await h.sidecar_start({ prompt: 'test task', noUi: true, model: 'google/gemini-test' }, tmpDir);
     });
     // stdio[2] should be a number (file descriptor), not 'ignore'
     expect(typeof capturedOpts.stdio[2]).toBe('number');

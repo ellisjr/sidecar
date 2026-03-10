@@ -18,6 +18,12 @@ describe('Sidecar Config Module', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sidecar-config-test-'));
     originalEnv = { ...process.env };
     process.env.SIDECAR_CONFIG_DIR = tempDir;
+    // Clear API keys to ensure deterministic fallback behavior
+    delete process.env.OPENROUTER_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.DEEPSEEK_API_KEY;
     jest.resetModules();
   });
 
@@ -322,6 +328,89 @@ describe('Sidecar Config Module', () => {
         expect(config.resolveModel(alias)).toBe(expectedModel);
       }
     );
+  });
+
+  describe('resolveModel - direct API fallback', () => {
+    it('should fall back to google/ when GEMINI_API_KEY is set but OPENROUTER_API_KEY is not', () => {
+      process.env.GEMINI_API_KEY = 'test-gemini-key';
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel('gemini');
+      expect(result).toBe('google/gemini-3.1-flash-lite-preview');
+    });
+
+    it('should fall back to openai/ when OPENAI_API_KEY is set but OPENROUTER_API_KEY is not', () => {
+      process.env.OPENAI_API_KEY = 'test-openai-key';
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel('gpt');
+      expect(result).toBe('openai/gpt-5.4');
+    });
+
+    it('should fall back to anthropic/ when ANTHROPIC_API_KEY is set but OPENROUTER_API_KEY is not', () => {
+      process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel('opus');
+      expect(result).toBe('anthropic/claude-opus-4.6');
+    });
+
+    it('should fall back to deepseek/ when DEEPSEEK_API_KEY is set but OPENROUTER_API_KEY is not', () => {
+      process.env.DEEPSEEK_API_KEY = 'test-deepseek-key';
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel('deepseek');
+      expect(result).toBe('deepseek/deepseek-v3.2');
+    });
+
+    it('should prefer OpenRouter when both OPENROUTER_API_KEY and direct key are set', () => {
+      process.env.OPENROUTER_API_KEY = 'test-openrouter-key';
+      process.env.GEMINI_API_KEY = 'test-gemini-key';
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel('gemini');
+      expect(result).toBe('openrouter/google/gemini-3.1-flash-lite-preview');
+    });
+
+    it('should return openrouter path when neither key is set', () => {
+      const config = loadModule();
+      const result = config.resolveModel('gemini');
+      expect(result).toBe('openrouter/google/gemini-3.1-flash-lite-preview');
+    });
+
+    it('should not apply fallback to explicit model strings with slash', () => {
+      process.env.GEMINI_API_KEY = 'test-gemini-key';
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel('openrouter/google/gemini-3.1-flash-lite-preview');
+      expect(result).toBe('openrouter/google/gemini-3.1-flash-lite-preview');
+    });
+
+    it('should not apply fallback for providers without direct key mapping', () => {
+      const config = loadModule();
+      const result = config.resolveModel('qwen');
+      expect(result).toBe('openrouter/qwen/qwen3.5-397b-a17b');
+    });
+
+    it('should apply fallback to default alias resolution', () => {
+      process.env.GEMINI_API_KEY = 'test-gemini-key';
+      const data = { default: 'gemini', aliases: {} };
+      fs.writeFileSync(path.join(tempDir, 'config.json'), JSON.stringify(data));
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel(undefined);
+      expect(result).toBe('google/gemini-3.1-flash-lite-preview');
+    });
+
+    it('should not apply fallback to explicit default model strings', () => {
+      process.env.GEMINI_API_KEY = 'test-gemini-key';
+      const data = { default: 'openrouter/google/gemini-3.1-flash-lite-preview', aliases: {} };
+      fs.writeFileSync(path.join(tempDir, 'config.json'), JSON.stringify(data));
+      jest.resetModules();
+      const config = loadModule();
+      const result = config.resolveModel(undefined);
+      expect(result).toBe('openrouter/google/gemini-3.1-flash-lite-preview');
+    });
   });
 
   describe('computeConfigHash', () => {

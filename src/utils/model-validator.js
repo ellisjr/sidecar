@@ -9,7 +9,7 @@
 const readline = require('readline');
 const { fetchModelsFromProvider } = require('./model-fetcher');
 const { readApiKeyValues } = require('./api-key-store');
-const { loadConfig, saveConfig } = require('./config');
+const { loadConfig, saveConfig, getConfigPath } = require('./config');
 const { logger } = require('./logger');
 
 /** Alias-to-search-term mapping for filtering provider model lists */
@@ -56,7 +56,7 @@ async function validateDirectModel(resolvedModel, alias, options = {}) {
 
   const relevant = filterRelevantModels(models, alias);
 
-  if (options.headless) {
+  if (options.headless || !process.stdin.isTTY) {
     const list = relevant.slice(0, 10).map(m => `  ${m.id}`).join('\n');
     throw new Error(
       `Model '${modelId}' not found on ${provider} API.\n` +
@@ -113,7 +113,18 @@ async function promptModelSelection(models, alias, provider, failedModelId) {
   const selected = models[idx];
   const newModel = selected.id;
 
-  const config = loadConfig() || {};
+  let config = loadConfig();
+  if (!config) {
+    const fs = require('fs');
+    const configPath = getConfigPath();
+    if (fs.existsSync(configPath)) {
+      throw new Error(
+        `Cannot save model selection: config file at ${configPath} is malformed. ` +
+        `Fix it manually or run 'sidecar setup'.`
+      );
+    }
+    config = {};
+  }
   if (!config.aliases) { config.aliases = {}; }
   config.aliases[alias] = newModel;
   saveConfig(config);

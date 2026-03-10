@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { PROVIDER_ENV_MAP } = require('./api-key-store');
 
 /** Default model alias map — short names to full OpenRouter model identifiers */
 const DEFAULT_ALIASES = {
@@ -82,12 +83,6 @@ function getDefaultAliases() {
   return { ...DEFAULT_ALIASES };
 }
 
-/** Direct API key env vars by OpenRouter provider segment */
-const DIRECT_API_KEYS = {
-  google: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY', deepseek: 'DEEPSEEK_API_KEY',
-};
-
 /**
  * Strip openrouter/ prefix when the direct provider API key is available
  * but OPENROUTER_API_KEY is not. Only called for alias-resolved models.
@@ -98,9 +93,9 @@ function applyDirectApiFallback(model) {
   if (!model.startsWith('openrouter/') || process.env.OPENROUTER_API_KEY) {
     return model;
   }
-  const direct = model.slice(11); // 'openrouter/'.length
-  const key = DIRECT_API_KEYS[direct.split('/')[0]];
-  return (key && process.env[key]) ? direct : model;
+  const direct = model.slice('openrouter/'.length);
+  const envVar = PROVIDER_ENV_MAP[direct.split('/')[0]];
+  return (envVar && process.env[envVar]) ? direct : model;
 }
 
 /**

@@ -11,7 +11,8 @@ const PROVIDER_ENV_MAP = {
   openrouter: 'OPENROUTER_API_KEY',
   google: 'GEMINI_API_KEY',
   openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY'
+  anthropic: 'ANTHROPIC_API_KEY',
+  deepseek: 'DEEPSEEK_API_KEY'
 };
 
 /** Validation endpoints per provider */

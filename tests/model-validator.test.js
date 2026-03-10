@@ -13,7 +13,7 @@ jest.mock('../src/utils/logger', () => ({
 
 const { fetchModelsFromProvider } = require('../src/utils/model-fetcher');
 const { readApiKeyValues } = require('../src/utils/api-key-store');
-const { loadConfig, saveConfig } = require('../src/utils/config');
+const { loadConfig, saveConfig, getConfigPath } = require('../src/utils/config');
 
 const MOCK_GOOGLE_MODELS = [
   { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
@@ -32,6 +32,11 @@ const MOCK_OPENAI_MODELS = [
 describe('Model Validator', () => {
   let validateDirectModel;
   let filterRelevantModels;
+  const origIsTTY = process.stdin.isTTY;
+
+  afterAll(() => {
+    process.stdin.isTTY = origIsTTY;
+  });
 
   beforeEach(() => {
     jest.resetModules();
@@ -56,7 +61,11 @@ describe('Model Validator', () => {
     keyStore.readApiKeyValues.mockReturnValue({ google: 'test-key' });
     config.loadConfig.mockReturnValue({ aliases: {} });
     config.saveConfig.mockImplementation(() => {});
+    config.getConfigPath.mockReturnValue('/tmp/sidecar-test-config.json');
     fetcher.fetchModelsFromProvider.mockResolvedValue(MOCK_GOOGLE_MODELS);
+
+    // Default to TTY for interactive tests; non-TTY tests override this
+    process.stdin.isTTY = true;
   });
 
   describe('validateDirectModel', () => {
@@ -112,6 +121,14 @@ describe('Model Validator', () => {
       ).rejects.toThrow(/sidecar setup --add-alias/);
     });
 
+    it('should throw when stdin is not a TTY (non-interactive)', async () => {
+      process.stdin.isTTY = false;
+
+      await expect(
+        validateDirectModel('google/gemini-old-deprecated', 'gemini')
+      ).rejects.toThrow(/not found on google API/i);
+    });
+
     it('should prompt user in interactive mode when model not found', async () => {
       // Mock readline to simulate user selecting option 1
       const mockRl = { question: jest.fn(), close: jest.fn() };
@@ -149,6 +166,51 @@ describe('Model Validator', () => {
       );
 
       process.stderr.write.mockRestore();
+    });
+
+    it('should throw when config file exists but is malformed', async () => {
+      const config = require('../src/utils/config');
+      const fs = require('fs');
+
+      config.loadConfig.mockReturnValue(null);
+      config.getConfigPath.mockReturnValue('/tmp/sidecar-test-config.json');
+      jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+
+      const mockRl = { question: jest.fn(), close: jest.fn() };
+      mockRl.question.mockImplementation((_prompt, cb) => cb('1'));
+      jest.spyOn(require('readline'), 'createInterface').mockReturnValue(mockRl);
+      jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+      await expect(
+        validateDirectModel('google/gemini-old', 'gemini')
+      ).rejects.toThrow(/malformed/i);
+
+      expect(config.saveConfig).not.toHaveBeenCalled();
+
+      process.stderr.write.mockRestore();
+      fs.existsSync.mockRestore();
+    });
+
+    it('should create new config when no config file exists', async () => {
+      const config = require('../src/utils/config');
+      const fs = require('fs');
+
+      config.loadConfig.mockReturnValue(null);
+      config.getConfigPath.mockReturnValue('/tmp/sidecar-nonexistent-config.json');
+      jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+      const mockRl = { question: jest.fn(), close: jest.fn() };
+      mockRl.question.mockImplementation((_prompt, cb) => cb('1'));
+      jest.spyOn(require('readline'), 'createInterface').mockReturnValue(mockRl);
+      jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+      const result = await validateDirectModel('google/gemini-old', 'gemini');
+
+      expect(result).toMatch(/^google\/gemini-/);
+      expect(config.saveConfig).toHaveBeenCalled();
+
+      process.stderr.write.mockRestore();
+      fs.existsSync.mockRestore();
     });
 
     it('should throw when user cancels (empty input)', async () => {

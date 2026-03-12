@@ -4,7 +4,7 @@ Research into how Claude Code skills achieve reliable invocation, with specific 
 
 ## Background
 
-Sidecar ships four auto-skills — `auto-review`, `auto-unblock`, `auto-security`, and `auto-bmad-method-check` — that fire contextually at key workflow moments. Unlike user-invocable skills (which have slash commands like `/commit`), auto-skills rely on Claude recognizing trigger conditions in the conversation and reading the skill file proactively.
+Sidecar ships four auto-skills — `auto-review`, `auto-unblock`, `auto-security`, and `auto-bmad-method-check` — that fire contextually at key workflow moments. Unlike user-invocable skills (which have slash commands like `/commit`), auto-skills were originally designed to rely solely on Claude recognizing trigger conditions in the conversation and reading the skill file proactively.
 
 The question: **how do we ensure Claude actually fires these skills when conditions are met?**
 
@@ -30,6 +30,10 @@ Claude discovers skills via the **Skill tool**, which scans these directories an
 ### Key Mechanism: The "Available Skills" System Reminder
 
 Every turn, Claude sees a system reminder listing available skills with their descriptions. This is the primary discovery mechanism. **Skills that appear in this list are far more likely to be invoked** because Claude evaluates them on every turn.
+
+### Critical Discovery: Nesting Depth Matters
+
+Claude Code only discovers skills at the **top level** of `~/.claude/skills/`. A skill at `~/.claude/skills/my-skill/SKILL.md` appears in the available skills list; a skill nested at `~/.claude/skills/parent/child/SKILL.md` does **not**. This was the root cause of the original visibility gap — auto-skills were installed as nested subdirectories under the main sidecar skill.
 
 ## How Superpowers Achieves Near-100% Reliability
 
@@ -84,42 +88,52 @@ The three layers create **redundant triggering paths**:
 - Even if the meta-instruction is missed, the skills list surfaces matches
 - Even if the skills list is scrolled past, the SessionStart hook re-injects on context reset
 
-## Where Sidecar Auto-Skills Stand Today
+## What We've Done
 
-### What We Have
+### Step 1: Add Auto-Skills to Main SKILL.md (Option B) ✅ Done
 
-1. **SKILL.md files** with `TRIGGER when:` clauses in descriptions — installed to `~/.claude/skills/sidecar/auto-*/`
-2. **Main sidecar skill** (`~/.claude/skills/sidecar/SKILL.md`) — appears in the available skills list
-3. **MCP tools** — `sidecar_start`, `sidecar_status`, `sidecar_read` available when MCP server is running
+Added an "Auto-Skills: Contextual Sidecar Triggers" section to the main `skill/SKILL.md` listing all four auto-skills with their trigger conditions in a table. Since the main sidecar skill appears in the available skills list, Claude gets passive awareness of auto-skill triggers when it reads the main skill.
 
-### The Gap
+**Pros:** Simple one-file change, no new infrastructure needed.
+**Cons:** Only provides awareness when sidecar context is active — Claude has to read the main skill first.
+
+### Step 2: Top-Level Installation for Skills List Visibility (Option D) ✅ Done
+
+Moved auto-skills from nested directories (`~/.claude/skills/sidecar/auto-*/`) to top-level directories (`~/.claude/skills/sidecar-auto-*/`). This makes them appear in Claude Code's "available skills" system reminder every turn.
+
+**Changes made:**
+- `postinstall.js` — installs auto-skills to `~/.claude/skills/sidecar-auto-review/` etc. (top-level), cleans up old nested path
+- All 4 SKILL.md frontmatters — `name` field updated to `sidecar-auto-review`, `sidecar-auto-unblock`, `sidecar-auto-security`, `sidecar-auto-bmad-method-check`
+- Main SKILL.md — updated reference path, mentions slash-command invocation
+
+**Result:** All four auto-skills now appear in the available skills list with their full trigger descriptions. They support both:
+- **Auto-fire** — Claude pattern-matches trigger conditions from the skills list every turn
+- **Manual invocation** — user can type `/sidecar-auto-review`, `/sidecar-auto-security`, etc.
+
+**Verified:** After local installation, the system reminder now includes entries like:
+```text
+- sidecar-auto-review: Use after completing a feature implementation, bug fix, or significant code change...
+- sidecar-auto-unblock: Use when you have attempted 5 or more different approaches to fix a bug...
+- sidecar-auto-security: Use when the user asks to commit changes, push code, or create a pull request...
+- sidecar-auto-bmad-method-check: Use when a BMAD-METHOD workflow has just produced an output artifact...
+```
+
+### Current State
 
 | Mechanism | Superpowers | Sidecar Auto-Skills |
 |-----------|-------------|---------------------|
-| SessionStart hook | Yes — injects meta-instruction | No |
-| System prompt injection | Yes — `<EXTREMELY_IMPORTANT>` tags | No |
-| Available skills list | Yes — all skills listed with descriptions | No — auto-skills not listed* |
-| Meta-instruction forcing skill checks | Yes — "ABSOLUTELY MUST" language | No — relies on Superpowers being installed |
-| Trigger specification | Description field | Description field (same format) |
+| SessionStart hook | Yes — injects meta-instruction | Not yet |
+| System prompt injection | Yes — `<EXTREMELY_IMPORTANT>` tags | Not yet |
+| Available skills list | Yes — all skills listed with descriptions | **Yes** — all 4 auto-skills listed ✅ |
+| Meta-instruction forcing skill checks | Yes — "ABSOLUTELY MUST" language | No — benefits from Superpowers if installed |
+| Trigger specification | Description field | Description field (same format) ✅ |
+| Manual invocation fallback | Yes — slash commands | **Yes** — `/sidecar-auto-*` commands ✅ |
 
-*Auto-skills are discoverable via the Skill tool filesystem scan but do **not** appear in the "available skills" system reminder that Claude sees every turn. This is the critical gap.
+The critical gap (skills list visibility) is now closed. The remaining gap is the SessionStart hook — without it, sidecar auto-skills rely on either (a) Superpowers being installed to force skill checking, or (b) Claude independently deciding to check skills based on the available skills list.
 
-### Practical Impact
+## Remaining Recommendations
 
-- If Superpowers is installed: auto-skills **may** fire because Superpowers forces Claude to check for skills. But Claude still has to discover them via filesystem scan rather than seeing them in the skills list.
-- If Superpowers is NOT installed: auto-skills have **no mechanism** prompting Claude to check for them. They exist on disk but Claude has no reason to look.
-- Auto-skills are **invisible** in the available skills reminder, so even an instruction-following Claude won't pattern-match against them unless something else prompts a skill check.
-
-## Recommendations
-
-### Immediate: Add Auto-Skills to Main SKILL.md (Option B) ✅ Done
-
-Add a section to the main `skill/SKILL.md` that lists all auto-skills with their trigger conditions. Since the main sidecar skill already appears in the available skills list, Claude will see the auto-skill triggers when reading the main skill.
-
-**Pros:** Simple one-file change, no new infrastructure needed, works today.
-**Cons:** Relies on Claude reading the full main skill (which it does when sidecar is relevant, but not every turn). Only provides awareness when sidecar context is active.
-
-### Short-Term: SessionStart Hook (Option A)
+### Next: SessionStart Hook (Option A)
 
 Register a lightweight SessionStart hook in sidecar's postinstall that injects a brief auto-skills reminder into the system prompt. This would mirror what Superpowers does but scoped to sidecar triggers.
 
@@ -127,28 +141,21 @@ Register a lightweight SessionStart hook in sidecar's postinstall that injects a
 1. Create `hooks/hooks.json` with SessionStart matcher
 2. Create a hook script that injects a compact reminder:
    ```text
-   Sidecar auto-skills are available. Check trigger conditions:
-   - auto-review: after implementing changes, before telling user "done"
-   - auto-unblock: after 5+ failed fix attempts
-   - auto-security: before git commit/push/PR
-   - auto-bmad-method-check: after writing BMAD artifacts in _bmad-output/
-   Read the full skill from ~/.claude/skills/sidecar/<name>/SKILL.md when triggered.
+   Sidecar auto-skills are installed. When you recognize these trigger conditions,
+   invoke the corresponding skill:
+   - /sidecar-auto-review — after implementing changes, before telling user "done"
+   - /sidecar-auto-unblock — after 5+ failed fix attempts
+   - /sidecar-auto-security — before git commit/push/PR
+   - /sidecar-auto-bmad-method-check — after writing BMAD artifacts in _bmad-output/
    ```
 3. Register the hook during postinstall alongside MCP and skill file installation
 
-**Pros:** Matches Superpowers' proven pattern. Always present from session start. Works independent of Superpowers.
+**Pros:** Matches Superpowers' proven pattern. Always present from session start. Works independent of Superpowers. Combined with skills list visibility (already done), this would give two independent triggering paths.
 **Cons:** Requires hook infrastructure (hooks.json, hook script, postinstall changes). Adds to system prompt size every session.
 
 **Open question:** Does the Claude Code hooks API support `experimental.chat.system.transform` for third-party packages, or is this restricted to plugins? If restricted, the hook could use the simpler `command` type to emit the reminder, though this is less reliable than system prompt injection.
 
-### Medium-Term: Make Auto-Skills Appear in Skills List (Option D)
-
-Give auto-skills optional slash-command names (e.g., `/auto-review`, `/auto-security`) so they appear in the available skills system reminder. Keep the auto-fire behavior — the slash command would just be an alternative manual trigger.
-
-**Pros:** Skills appear in the list Claude checks every turn. Belt and suspenders with auto-fire.
-**Cons:** May confuse users who see skills they didn't know about. Pollutes the skills namespace. May not be possible without changes to how Claude Code lists skills.
-
-### Long-Term: Auto-Skills Framework in Sidecar Config
+### Future: Auto-Skills Framework in Sidecar Config
 
 If sidecar adds an `autoSkills` config namespace, centralize trigger definitions and enable/disable switches:
 
@@ -165,13 +172,20 @@ If sidecar adds an `autoSkills` config namespace, centralize trigger definitions
 
 This would let users customize which auto-skills fire and with what defaults, without editing SKILL.md files.
 
+### Future: Community Auto-Skills
+
+The top-level installation pattern (`~/.claude/skills/sidecar-auto-*/`) and dynamic discovery in postinstall (`fs.readdirSync` for `auto-*` directories) means third-party auto-skills could be contributed by following the same convention:
+1. Add a `skill/auto-<name>/SKILL.md` to the repo
+2. Postinstall automatically discovers and installs it as `~/.claude/skills/sidecar-auto-<name>/`
+3. No hardcoded lists to maintain
+
 ## Summary
 
-| Approach | Effort | Reliability | Independence from Superpowers |
-|----------|--------|-------------|-------------------------------|
-| **B: Main SKILL.md section** (done) | Low | Medium — works when sidecar context is active | Partial — still benefits from Superpowers |
-| **A: SessionStart hook** | Medium | High — always present from session start | Full — self-contained |
-| **D: Skills list appearance** | Low-Medium | High — Claude checks every turn | Full |
-| **Config framework** | High | High — user-configurable | Full |
+| Approach | Effort | Reliability | Status |
+|----------|--------|-------------|--------|
+| **B: Main SKILL.md section** | Low | Medium — works when sidecar context is active | ✅ Done |
+| **D: Top-level installation** | Low | High — Claude checks skills list every turn | ✅ Done |
+| **A: SessionStart hook** | Medium | Very high — always present from session start | Recommended next |
+| **Config framework** | High | Very high — user-configurable | Future |
 
-**Recommended path:** B (done) → A (next PR) → Config framework (when sidecar adds autoSkills namespace).
+**Current reliability:** With options B and D both implemented, auto-skills have strong visibility through the available skills list. The main remaining improvement is a SessionStart hook (Option A) for environments where Superpowers is not installed, ensuring skill awareness is always injected at session start regardless of other plugins.

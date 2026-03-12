@@ -29,10 +29,11 @@ This skill covers planning and key implementation artifacts where a second opini
 | `ux-design-specification.md` | Planning | `PRD.md` |
 | `architecture.md` | Solutioning | `PRD.md`, `ux-design-specification.md` (if exists) |
 | `epics.md` (or sharded `epics/` dir) | Solutioning | `PRD.md`, `architecture.md` |
-| Implementation Readiness result | Solutioning | `PRD.md`, `architecture.md`, `epics.md`, `ux-design-specification.md` (if exists) |
 | `story-*.md` | Implementation | `epics.md`, `PRD.md`, `architecture.md`, `sprint-status.yaml` |
 | `sprint-change-proposal-*.md` | Implementation | `PRD.md`, `epics.md`, affected `story-*.md` files |
 | `epic-*-retro-*.md` | Implementation | All `story-*.md` in that epic, previous retro (if exists) |
+
+**Scope rationale:** This table is intentionally selective — it covers high-leverage checkpoint artifacts where a second opinion catches costly mistakes. Lower-leverage artifacts (`brainstorming-report.md`, `research-*.md`, `sprint-status.yaml`, `project-context.md`) and non-persisted gates (Implementation Readiness) are excluded. ADRs produced alongside `architecture.md` are reviewed as part of the architecture artifact, not separately.
 
 ## When This Skill Fires
 
@@ -99,10 +100,13 @@ Wait for the user's response:
    - If no references found, fall back to the Artifact Scope table above
    - Scan `_bmad-output/planning-artifacts/` and `_bmad-output/implementation-artifacts/` for matching files
    - For glob patterns (e.g., `research-*.md`, `story-*.md`), collect all matching files
+   - **Large input sets:** If a glob matches many files (e.g., 10+ stories for a retrospective), list all paths in the briefing but mark the most directly relevant ones (e.g., same-epic completed stories, previous retro). The sidecar can read additional files on demand via `read_file`.
 
 3. **Collect input document paths and descriptions.** For each input document, note its file path and a one-line description of what it contains (e.g., "`_bmad-output/planning-artifacts/PRD.md` — functional and non-functional requirements"). Do NOT read or paste their full content into the briefing — the sidecar has `read_file` access and will read them directly. This saves significant context in the parent session.
 
-4. **Truncation guidance:** The output artifact should always be included in full (it's what's being reviewed). If even the artifact alone exceeds ~80,000 characters, truncate to the most relevant sections and note what was omitted so the sidecar can use `read_file` for the rest.
+4. **Sharded artifacts (e.g., `epics/` directory):** If the artifact is a directory of shard files rather than a single file, concatenate all shards into the briefing with clear `--- filename.md ---` headers between each. Apply approved changes to the specific shard file(s) they target, not to a single monolithic file. When listing the artifact in the briefing, note that it spans multiple files so the sidecar references the correct shard in its findings.
+
+5. **Truncation guidance:** The output artifact should always be included in full (it's what's being reviewed). If even the artifact alone exceeds ~80,000 characters, truncate to the most relevant sections and note what was omitted so the sidecar can use `read_file` for the rest.
 
 ### Step 3: Spawn the first sidecar
 
@@ -189,7 +193,7 @@ Process models in the order the user specified them. For each model:
 
 **4a. Poll and read results**
 
-Poll the sidecar's status using `mcp__sidecar__sidecar_status` with the saved task ID, following the polling cadence indicated by `sidecar_status` responses. Continue polling while status is `running`; treat `complete`, `timeout`, `crashed`, `error`, and `aborted` as terminal. Once terminal, read the output using `mcp__sidecar__sidecar_read`.
+Run `sleep 25` in your shell before the first and every subsequent `mcp__sidecar__sidecar_status` call — this enforces the mandatory polling interval and prevents token waste. Continue polling while status is `running`; treat `complete`, `timeout`, `crashed`, `error`, and `aborted` as terminal. Once terminal, read the output using `mcp__sidecar__sidecar_read`.
 
 **4b. Claude evaluates each suggestion**
 
@@ -232,6 +236,7 @@ If there are more models to process:
 - This ensures the next model reviews the improved version, not the original
 - Poll, read, and evaluate the next model's results the same way (repeat 4a–4d)
 - When presenting: flag explicitly if this model raised something the previous model missed, or contradicts a change already applied
+- **If a model fails or times out mid-pipeline:** Preserve all changes already applied from prior models. Inform the user briefly (e.g., "[model] timed out after 15 minutes"). Continue to the next model in the queue using the current artifact state. The user can choose to retry the failed model later or proceed without it.
 
 ### Step 5: Consolidation check
 

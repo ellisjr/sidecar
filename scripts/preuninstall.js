@@ -11,7 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Hook script basenames registered by postinstall — used to identify sidecar hooks during removal
+// Hook script basenames registered by postinstall — used to identify sidecar hooks during removal.
+// Includes stop-hook.sh (Phase 2) so future installs are cleaned up correctly on uninstall.
 const SIDECAR_HOOK_SCRIPTS = ['pre-bash.sh', 'post-tool-use.sh', 'post-failure.sh', 'stop-hook.sh'];
 
 function isSidecarHookCommand(command) {

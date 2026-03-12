@@ -117,6 +117,7 @@ src/
 │   ├── updater.js  # @type {import('update-notifier').UpdateNotifier|null}
 │   └── validators.js  # * Provider to API key mapping
 ├── cli-handlers.js  # CLI Command Handlers
+├── cli-usage.js  # CLI Usage Text
 ├── cli.js  # * Default values per spec §4.1
 ├── conflict.js  # File Conflict Detection Module
 ├── context-compression.js  # Context Compression Module
@@ -193,6 +194,7 @@ evals/
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
 | `cli-handlers.js` | CLI Command Handlers | `handleSetup()`, `handleAbort()`, `handleUpdate()`, `handleMcp()`, `handleAutoSkills()` |
+| `cli-usage.js` | CLI Usage Text | `getUsage()` |
 | `cli.js` | * Default values per spec §4.1 | `parseArgs()`, `validateStartArgs()`, `getUsage()`, `DEFAULTS()` |
 | `conflict.js` | File Conflict Detection Module | `detectConflicts()`, `formatConflictWarning()` |
 | `context-compression.js` | Context Compression Module | `compressContext()`, `estimateTokenCount()`, `buildPreamble()`, `DEFAULT_TOKEN_LIMIT()` |

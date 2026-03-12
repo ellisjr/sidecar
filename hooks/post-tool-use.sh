@@ -44,26 +44,34 @@ SESSION_ID=$(jq -r '.session_id // ""' "$TMP_JSON" 2>/dev/null || echo "")
 
 # ── Event collection ─────────────────────────────────────────────────
 # Append structured event to session-specific JSONL file
-if [ -n "$SESSION_ID" ]; then
-  EVENT_FILE="${TMPDIR:-/tmp}/sidecar-monitor-${SESSION_ID}.jsonl"
+# Sanitize SESSION_ID to alphanumeric/hyphens only (prevent path traversal)
+SAFE_SID=$(printf '%s' "$SESSION_ID" | tr -cd 'a-zA-Z0-9_-')
+if [ -n "$SAFE_SID" ]; then
+  EVENT_FILE="${TMPDIR:-/tmp}/sidecar-monitor-${SAFE_SID}.jsonl"
 
-  EVENT=$(jq -rc --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
-    {
-      ts: $ts,
-      tool: (.tool_name // "unknown"),
-      file: (if .tool_name == "Bash" then ""
-             elif .tool_name == "MultiEdit" then (.tool_input.edits[0].file_path // "")
-             else (.tool_input.file_path // "") end),
-      success: (if .tool_name == "Bash" then ((.tool_response.exit_code // 0) == 0) else true end),
-      command: (if .tool_name == "Bash" then (.tool_input.command // "") else "" end)
-    }' "$TMP_JSON" 2>/dev/null || echo "")
+  # Cap event file at 5MB to prevent unbounded growth in long sessions
+  MAX_SIZE=5242880
+  if [ -f "$EVENT_FILE" ] && [ "$(wc -c < "$EVENT_FILE" 2>/dev/null || echo 0)" -gt "$MAX_SIZE" ]; then
+    : # Skip collection — file too large
+  else
+    EVENT=$(jq -rc --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+      {
+        ts: $ts,
+        tool: (.tool_name // "unknown"),
+        file: (if .tool_name == "Bash" then ""
+               elif .tool_name == "MultiEdit" then (.tool_input.edits[0].file_path // "")
+               else (.tool_input.file_path // "") end),
+        success: (if .tool_name == "Bash" then ((.tool_response.exit_code // 0) == 0) else true end),
+        command: (if .tool_name == "Bash" then (.tool_input.command // "") else "" end)
+      }' "$TMP_JSON" 2>/dev/null || echo "")
 
-  if [ -n "$EVENT" ]; then
-    # Create with restrictive permissions if new; append otherwise
-    if [ ! -f "$EVENT_FILE" ]; then
-      touch "$EVENT_FILE" && chmod 600 "$EVENT_FILE"
+    if [ -n "$EVENT" ]; then
+      # Create with restrictive permissions atomically (umask prevents TOCTOU window)
+      if [ ! -f "$EVENT_FILE" ]; then
+        (umask 177 && : > "$EVENT_FILE")
+      fi
+      echo "$EVENT" >> "$EVENT_FILE"
     fi
-    echo "$EVENT" >> "$EVENT_FILE"
   fi
 fi
 

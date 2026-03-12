@@ -150,9 +150,35 @@ function registerClaudeDesktop() {
 }
 
 /**
+ * Merge sidecar hook matchers into settings, deduplicating by script basename.
+ * @param {object} settings - Claude settings object (mutated in place)
+ * @param {object} hooksConfig - Parsed hooks.json with resolved paths
+ * @returns {number} Count of newly registered hooks
+ */
+function mergeHooks(settings, hooksConfig) {
+  if (!settings.hooks) { settings.hooks = {}; }
+  let registered = 0;
+
+  for (const [event, matchers] of Object.entries(hooksConfig.hooks || {})) {
+    if (!settings.hooks[event]) { settings.hooks[event] = []; }
+
+    for (const matcher of matchers) {
+      const cmd = (matcher.hooks && matcher.hooks[0] && matcher.hooks[0].command) || '';
+      const basename = path.basename(cmd);
+      // Deduplicate by basename so upgrades (which change install path) replace old entries
+      settings.hooks[event] = settings.hooks[event].filter((existing) => {
+        return !(existing.hooks && existing.hooks.some((h) => path.basename(h.command) === basename));
+      });
+      settings.hooks[event].push(matcher);
+      registered++;
+    }
+  }
+  return registered;
+}
+
+/**
  * Register activity monitoring hooks in ~/.claude/settings.json.
  * Resolves absolute paths to hook scripts at install time.
- * Merges sidecar hooks without overwriting existing user hooks.
  */
 function registerHooks() {
   const hooksDir = path.join(__dirname, '..', 'hooks');
@@ -162,7 +188,6 @@ function registerHooks() {
   let hooksConfig;
   try {
     const raw = fs.readFileSync(hooksConfigPath, 'utf-8');
-    // Escape backslashes for Windows paths before injecting into JSON
     const safeHooksDir = hooksDir.replace(/\\/g, '\\\\');
     hooksConfig = JSON.parse(raw.replace(/__HOOKS_DIR__/g, safeHooksDir));
   } catch (err) {
@@ -178,46 +203,19 @@ function registerHooks() {
     // File doesn't exist or invalid — start fresh
   }
 
-  if (!settings.hooks) { settings.hooks = {}; }
-
-  // Merge each hook event, appending sidecar hooks after existing ones
-  let registered = 0;
-  for (const [event, matchers] of Object.entries(hooksConfig.hooks || {})) {
-    if (!settings.hooks[event]) { settings.hooks[event] = []; }
-
-    for (const matcher of matchers) {
-      const cmd = (matcher.hooks && matcher.hooks[0] && matcher.hooks[0].command) || '';
-      // Skip if this exact hook command is already registered
-      const alreadyExists = settings.hooks[event].some((existing) => {
-        return existing.hooks && existing.hooks.some((h) => h.command === cmd);
-      });
-      if (!alreadyExists) {
-        settings.hooks[event].push(matcher);
-        registered++;
-      }
-    }
-  }
-
+  const registered = mergeHooks(settings, hooksConfig);
   if (registered > 0) {
     const settingsDir = path.dirname(settingsPath);
     if (!fs.existsSync(settingsDir)) {
       fs.mkdirSync(settingsDir, { recursive: true, mode: 0o700 });
     }
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), { mode: 0o600 });
-  }
-
-  if (registered > 0) {
     console.log('');
-    console.log('[claude-sidecar] Activity monitoring hooks registered:');
+    console.log(`[claude-sidecar] Activity monitoring hooks registered (${registered}):`);
     console.log('  - PreToolUse: auto-security gate (git commit/push/PR)');
     console.log('  - PostToolUse: BMAD artifact trigger + event collection');
     console.log('  - PostToolUseFailure: failure event collection');
-    console.log('');
-    console.log('  Auto-skills suggest security scans, code reviews, and unblock');
-    console.log('  assistance at key workflow moments.');
-    console.log('');
     console.log('  To disable: sidecar auto-skills --off');
-    console.log('  Config: ~/.config/sidecar/config.json');
   }
 }
 
@@ -250,4 +248,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { addMcpToConfigFile, registerHooks };
+module.exports = { addMcpToConfigFile, mergeHooks, registerHooks };

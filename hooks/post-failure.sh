@@ -36,7 +36,12 @@ if [ -z "$SESSION_ID" ]; then
 fi
 
 # ── Append failure event ─────────────────────────────────────────────
-EVENT_FILE="${TMPDIR:-/tmp}/sidecar-monitor-${SESSION_ID}.jsonl"
+# Sanitize SESSION_ID to alphanumeric/hyphens only (prevent path traversal)
+SAFE_SID=$(printf '%s' "$SESSION_ID" | tr -cd 'a-zA-Z0-9_-')
+if [ -z "$SAFE_SID" ]; then
+  exit 0
+fi
+EVENT_FILE="${TMPDIR:-/tmp}/sidecar-monitor-${SAFE_SID}.jsonl"
 
 EVENT=$(jq -rc --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
   {
@@ -46,12 +51,12 @@ EVENT=$(jq -rc --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
            else (.tool_input.file_path // "") end),
     success: false,
     command: (if .tool_name == "Bash" then (.tool_input.command // "") else "" end),
-    errorSnippet: ((.error // .tool_response.error // .tool_response.stderr // "")[:500])
+    errorSnippet: ((.error // .tool_response.error // .tool_response.stderr // "")[0:500])
   }' "$TMP_JSON" 2>/dev/null || echo "")
 
 if [ -n "$EVENT" ]; then
   if [ ! -f "$EVENT_FILE" ]; then
-    touch "$EVENT_FILE" && chmod 600 "$EVENT_FILE"
+    (umask 177 && : > "$EVENT_FILE")
   fi
   echo "$EVENT" >> "$EVENT_FILE"
 fi

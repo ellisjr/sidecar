@@ -64,7 +64,6 @@ Used by auto-bmad-method-check to determine which input documents to include in 
 | Implementation Readiness | `PRD.md`, `architecture.md`, `epics.md`, `ux-design-specification.md` (if exists) |
 | `sprint-status.yaml` | `epics.md` |
 | `story-*.md` | `epics.md`, `PRD.md`, `architecture.md`, `sprint-status.yaml` |
-
 | `sprint-change-proposal-*.md` | `PRD.md`, `epics.md`, affected `story-*.md` files |
 | `epic-*-retro-*.md` | All `story-*.md` in that epic, previous retro (if exists) |
 | `tech-spec.md` | None (Quick Flow — standalone) |

@@ -1,5 +1,5 @@
 ---
-name: auto-review
+name: sidecar-auto-review
 description: >
   Use after completing a feature implementation, bug fix, or significant code change — before
   claiming the work is done. Offers to spawn a sidecar with a different model to review the

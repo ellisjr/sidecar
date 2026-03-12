@@ -62,7 +62,7 @@ function addMcpToConfigFile(configPath, name, config) {
   return status;
 }
 
-/** Install skill files to ~/.claude/skills/sidecar/ */
+/** Install skill files to ~/.claude/skills/ */
 function installSkill() {
   try {
     fs.mkdirSync(SKILL_DEST_DIR, { recursive: true });
@@ -72,13 +72,27 @@ function installSkill() {
     console.error(`[claude-sidecar] Warning: Could not install skill: ${err.message}`);
   }
 
+  const skillsRoot = path.join(os.homedir(), '.claude', 'skills');
   for (const name of AUTO_SKILLS) {
     try {
       const src = path.join(SKILL_DIR, name, 'SKILL.md');
-      const destDir = path.join(SKILL_DEST_DIR, name);
+      // Install as top-level skill (e.g., ~/.claude/skills/sidecar-auto-review/)
+      // so Claude Code discovers it in the available skills list
+      const destDir = path.join(skillsRoot, `sidecar-${name}`);
       fs.mkdirSync(destDir, { recursive: true });
       fs.copyFileSync(src, path.join(destDir, 'SKILL.md'));
-      console.log(`[claude-sidecar] Skill installed: ${name}`);
+      console.log(`[claude-sidecar] Skill installed: sidecar-${name}`);
+
+      // Clean up old nested location (~/.claude/skills/sidecar/<name>/)
+      const oldDir = path.join(SKILL_DEST_DIR, name);
+      try {
+        if (fs.existsSync(path.join(oldDir, 'SKILL.md'))) {
+          fs.unlinkSync(path.join(oldDir, 'SKILL.md'));
+          fs.rmdirSync(oldDir);
+        }
+      } catch {
+        // Old location doesn't exist or already cleaned — ignore
+      }
     } catch (err) {
       console.error(`[claude-sidecar] Warning: Could not install ${name} skill: ${err.message}`);
     }

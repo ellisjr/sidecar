@@ -1,5 +1,5 @@
 ---
-name: auto-bmad-method-check
+name: sidecar-auto-bmad-method-check
 description: >
   Use when a BMAD-METHOD workflow has just produced an output artifact (PRD, architecture doc,
   epics, story file, etc.) and the user has not yet finalized it or moved to the next workflow

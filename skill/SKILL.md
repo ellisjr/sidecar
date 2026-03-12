@@ -1016,7 +1016,7 @@ Sidecar includes auto-skills that fire automatically at key workflow moments. Th
 | `auto-security` | User says "commit", "push", "create PR", or you are about to run git commit/push/gh pr create | Offers sidecar security scan of staged changes before commit |
 | `auto-bmad-method-check` | A BMAD-METHOD artifact (PRD, architecture, epics, story, etc.) has just been written or updated in `_bmad-output/` | Offers sidecar second-opinion review of the artifact |
 
-**How to use:** When you recognize a trigger condition above, read the full skill from `~/.claude/skills/sidecar/<skill-name>/SKILL.md` and follow its procedure. Each skill will prompt the user for confirmation before spawning any sidecars.
+**How to use:** When you recognize a trigger condition above, invoke the skill (e.g., `/sidecar-auto-review`) or read it from `~/.claude/skills/sidecar-<skill-name>/SKILL.md` and follow its procedure. Each skill will prompt the user for confirmation before spawning any sidecars.
 
 **Skip conditions (common to all):** Skip if the `mcp__sidecar__sidecar_start` tool is not available, or if a sidecar review already ran for the same content.
 

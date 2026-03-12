@@ -1,5 +1,5 @@
 ---
-name: auto-security
+name: sidecar-auto-security
 description: >
   Use when the user asks to commit changes, push code, or create a pull request. Offers to
   spawn a sidecar to audit the diff for security vulnerabilities before the commit/push/PR

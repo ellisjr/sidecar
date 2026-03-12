@@ -1,5 +1,5 @@
 ---
-name: auto-unblock
+name: sidecar-auto-unblock
 description: >
   Use when you have attempted 5 or more different approaches to fix a bug, pass a test, or
   solve a problem and none have worked. Offers to spawn a sidecar brainstorming session with

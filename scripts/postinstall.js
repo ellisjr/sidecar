@@ -13,9 +13,12 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 
-const SKILL_SOURCE = path.join(__dirname, '..', 'skill', 'SKILL.md');
+const SKILL_DIR = path.join(__dirname, '..', 'skill');
+const SKILL_SOURCE = path.join(SKILL_DIR, 'SKILL.md');
 const SKILL_DEST_DIR = path.join(os.homedir(), '.claude', 'skills', 'sidecar');
 const SKILL_DEST = path.join(SKILL_DEST_DIR, 'SKILL.md');
+
+const AUTO_SKILLS = ['auto-review', 'auto-unblock', 'auto-security'];
 
 const MCP_CONFIG = { command: 'npx', args: ['-y', 'claude-sidecar@latest', 'mcp'] };
 
@@ -50,7 +53,7 @@ function addMcpToConfigFile(configPath, name, config) {
   return status;
 }
 
-/** Install skill file to ~/.claude/skills/sidecar/ */
+/** Install skill files to ~/.claude/skills/sidecar/ */
 function installSkill() {
   try {
     fs.mkdirSync(SKILL_DEST_DIR, { recursive: true });
@@ -58,6 +61,18 @@ function installSkill() {
     console.log('[claude-sidecar] Skill installed to ~/.claude/skills/sidecar/');
   } catch (err) {
     console.error(`[claude-sidecar] Warning: Could not install skill: ${err.message}`);
+  }
+
+  for (const name of AUTO_SKILLS) {
+    try {
+      const src = path.join(SKILL_DIR, name, 'SKILL.md');
+      const destDir = path.join(SKILL_DEST_DIR, name);
+      fs.mkdirSync(destDir, { recursive: true });
+      fs.copyFileSync(src, path.join(destDir, 'SKILL.md'));
+      console.log(`[claude-sidecar] Skill installed: ${name}`);
+    } catch (err) {
+      console.error(`[claude-sidecar] Warning: Could not install ${name} skill: ${err.message}`);
+    }
   }
 }
 

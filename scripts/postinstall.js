@@ -18,11 +18,16 @@ const SKILL_SOURCE = path.join(SKILL_DIR, 'SKILL.md');
 const SKILL_DEST_DIR = path.join(os.homedir(), '.claude', 'skills', 'sidecar');
 const SKILL_DEST = path.join(SKILL_DEST_DIR, 'SKILL.md');
 
-const AUTO_SKILLS = fs
-  .readdirSync(SKILL_DIR, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory() && entry.name.startsWith('auto-'))
-  .map((entry) => entry.name)
-  .sort();
+let AUTO_SKILLS = [];
+try {
+  AUTO_SKILLS = fs
+    .readdirSync(SKILL_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith('auto-'))
+    .map((entry) => entry.name)
+    .sort();
+} catch {
+  // skill/ directory missing — continue with empty list
+}
 
 const MCP_CONFIG = { command: 'npx', args: ['-y', 'claude-sidecar@latest', 'mcp'] };
 

@@ -32,7 +32,7 @@ Reference for the auto-bmad-method-check skill. Captures all workflows, artifact
 
 ## Dependency Chain
 
-```
+```text
 Brainstorming/Research ──> Product Brief ──> PRD ──> UX Design (optional)
                                                ├──> Architecture
                                                └──> Architecture ──> Epics/Stories
@@ -92,7 +92,7 @@ Used by auto-bmad-method-check to determine which input documents to include in 
 
 ## Standard Artifact Locations
 
-```
+```text
 _bmad-output/
   planning-artifacts/
     brainstorming-report.md

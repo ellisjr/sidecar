@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-/** Sidecar hook script filenames — used to identify our hooks regardless of install path */
+// Hook script basenames registered by postinstall — used to identify sidecar hooks during removal
 const SIDECAR_HOOK_SCRIPTS = ['pre-bash.sh', 'post-tool-use.sh', 'post-failure.sh', 'stop-hook.sh'];
 
 function isSidecarHookCommand(command) {

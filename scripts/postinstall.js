@@ -6,6 +6,7 @@
  * 1. Copies SKILL.md to ~/.claude/skills/sidecar/
  * 2. Registers MCP server in Claude Code (~/.claude.json)
  * 3. Registers MCP server in Claude Desktop/Cowork config
+ * 4. Registers activity monitoring hooks in ~/.claude/settings.json
  */
 
 const fs = require('fs');
@@ -205,18 +206,19 @@ function registerHooks() {
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), { mode: 0o600 });
   }
 
-  // First-run notice
-  console.log('');
-  console.log('[claude-sidecar] Activity monitoring hooks registered:');
-  console.log('  - PreToolUse: auto-security gate (git commit/push/PR)');
-  console.log('  - PostToolUse: BMAD artifact trigger + event collection');
-  console.log('  - PostToolUseFailure: failure event collection');
-  console.log('');
-  console.log('  Auto-skills suggest security scans, code reviews, and unblock');
-  console.log('  assistance at key workflow moments.');
-  console.log('');
-  console.log('  To disable: sidecar auto-skills --off');
-  console.log('  Config: ~/.config/sidecar/config.json');
+  if (registered > 0) {
+    console.log('');
+    console.log('[claude-sidecar] Activity monitoring hooks registered:');
+    console.log('  - PreToolUse: auto-security gate (git commit/push/PR)');
+    console.log('  - PostToolUse: BMAD artifact trigger + event collection');
+    console.log('  - PostToolUseFailure: failure event collection');
+    console.log('');
+    console.log('  Auto-skills suggest security scans, code reviews, and unblock');
+    console.log('  assistance at key workflow moments.');
+    console.log('');
+    console.log('  To disable: sidecar auto-skills --off');
+    console.log('  Config: ~/.config/sidecar/config.json');
+  }
 }
 
 function main() {

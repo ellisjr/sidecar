@@ -35,7 +35,7 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-TMP_JSON=$(mktemp)
+TMP_JSON=$(mktemp 2>/dev/null) || exit 0
 trap 'rm -f "$TMP_JSON"' EXIT
 cat > "$TMP_JSON"
 
@@ -82,19 +82,12 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ] || [ "$TOOL_NAME" = "
     | length > 0' "$TMP_JSON" 2>/dev/null || echo "false")
 
   if [ "$HAS_BMAD" = "true" ]; then
-    # Extract a representative file path for the message
-    BMAD_FILE=$(jq -r '
+    # Build JSON safely via jq to avoid injection from filenames with quotes/backslashes
+    jq -n --arg file "$(jq -r '
       [.tool_input.file_path, (.tool_input.edits[]?.file_path)]
       | map(select(. != null and contains("_bmad-output/")))
-      | first' "$TMP_JSON" 2>/dev/null || echo "_bmad-output/")
-
-    cat <<HOOK_OUTPUT
-{
-  "hookSpecificOutput": {
-    "additionalContext": "A BMAD-METHOD artifact was just written or updated at ${BMAD_FILE}. Consider running the sidecar-auto-bmad-method-check skill to get a second-opinion review from another model before finalizing this artifact. You can invoke it with: use the Skill tool with skill 'sidecar-auto-bmad-method-check'. If the user has already reviewed this artifact or explicitly declined a check, proceed without one."
-  }
-}
-HOOK_OUTPUT
+      | first' "$TMP_JSON" 2>/dev/null || echo "_bmad-output/")" \
+      '{hookSpecificOutput:{additionalContext:("A BMAD-METHOD artifact was just written or updated at " + $file + ". Consider running the sidecar-auto-bmad-method-check skill to get a second-opinion review from another model before finalizing this artifact. You can invoke it with: use the Skill tool with skill \u0027sidecar-auto-bmad-method-check\u0027. If the user has already reviewed this artifact or explicitly declined a check, proceed without one.")}}'
     exit 0
   fi
 fi

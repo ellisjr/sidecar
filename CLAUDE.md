@@ -165,7 +165,7 @@ scripts/
 ├── integration-test.sh
 ├── list-models.js
 ├── postinstall.js  # Install skill files to ~/.claude/skills/
-├── preuninstall.js  # Sidecar hook script filenames — used to identify our hooks regardless of install path
+├── preuninstall.js  # Pre-uninstall script for claude-sidecar
 ├── test-tools.sh
 ├── validate-docs.js  # * Main entry point.
 ├── validate-thinking.js

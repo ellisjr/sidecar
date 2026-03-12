@@ -25,7 +25,9 @@ if [ -f "$CONFIG_PATH" ] && command -v jq >/dev/null 2>&1; then
 fi
 
 # ── Read stdin to temp file (avoid ARG_MAX on large payloads) ─────────
-TMP_JSON=$(mktemp)
+# If mktemp fails (disk full, permissions), allow the command through
+# rather than blocking git operations with a non-zero exit.
+TMP_JSON=$(mktemp 2>/dev/null) || exit 0
 trap 'rm -f "$TMP_JSON"' EXIT
 cat > "$TMP_JSON"
 

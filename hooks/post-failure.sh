@@ -26,7 +26,7 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-TMP_JSON=$(mktemp)
+TMP_JSON=$(mktemp 2>/dev/null) || exit 0
 trap 'rm -f "$TMP_JSON"' EXIT
 cat > "$TMP_JSON"
 

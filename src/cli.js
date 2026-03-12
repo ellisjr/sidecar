@@ -95,7 +95,9 @@ function isBooleanFlag(key) {
      'version',
      'help',
      'api-keys',
-     'validate-model'
+     'validate-model',
+     'on',
+     'off'
    ];
   return booleanFlags.includes(key);
 }
@@ -284,6 +286,7 @@ Commands:
   abort       Abort a running sidecar session
   setup       Configure default model and aliases
     --api-keys               Open API key setup window
+  auto-skills List/enable/disable auto-skills
   update      Update to latest version
   mcp         Start MCP server (stdio transport)
 
@@ -325,6 +328,11 @@ Options for 'list':
 Options for 'read':
   --summary                    Show summary (default)
   --conversation               Show full conversation
+
+Options for 'auto-skills':
+  --on [skill ...]             Enable all or specific auto-skills
+  --off [skill ...]            Disable all or specific auto-skills
+  (no flags)                   Show current status
 
 OpenCode Agent Types:
     Chat       Reads auto, writes/bash ask permission (interactive default)

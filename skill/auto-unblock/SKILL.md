@@ -39,6 +39,12 @@ When you're stuck — multiple approaches tried, all failing — offer to spawn 
 
 ## Procedure
 
+### Step 0: Check if this skill is enabled
+
+Call `mcp__sidecar__sidecar_guide` with the question "Is auto-skill 'unblock' enabled?" If the guide response indicates the skill is disabled (either master switch off or per-skill disabled), **silently skip this entire skill** — produce no output, no prompt, no side effects. Just stop here.
+
+If `sidecar_guide` is unavailable, proceed (assume enabled by default).
+
 ### Step 1: Discover available models and prompt the user
 
 Before presenting the prompt, call `mcp__sidecar__sidecar_guide` to get the configured model alias table. Extract the alias names (e.g., `gemini`, `gpt`, `opus`) from the guide output. If the guide call fails, fall back to: "your configured models (run `sidecar setup` to see them)".

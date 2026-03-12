@@ -51,9 +51,11 @@ This skill covers planning and key implementation artifacts where a second opini
 
 ## Procedure
 
-### Step 0: Verify BMAD-METHOD installation
+### Step 0: Check config and verify BMAD-METHOD installation
 
-Before anything else, check that the BMAD-METHOD is installed in the current project:
+First, call `mcp__sidecar__sidecar_guide` with the question "Is auto-skill 'bmadMethodCheck' enabled?" If the guide response indicates the skill is disabled (either master switch off or per-skill disabled), **silently skip this entire skill** — produce no output, no prompt, no side effects. Just stop here. If `sidecar_guide` is unavailable, proceed (assume enabled by default).
+
+Then check that the BMAD-METHOD is installed in the current project:
 
 1. Look for `_bmad/bmm/config.yaml` in the project root
 2. Look for `_bmad-output/` directory

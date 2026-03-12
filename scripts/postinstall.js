@@ -148,11 +148,94 @@ function registerClaudeDesktop() {
   }
 }
 
+/**
+ * Register activity monitoring hooks in ~/.claude/settings.json.
+ * Resolves absolute paths to hook scripts at install time.
+ * Merges sidecar hooks without overwriting existing user hooks.
+ */
+function registerHooks() {
+  const hooksDir = path.join(__dirname, '..', 'hooks');
+  const hooksConfigPath = path.join(hooksDir, 'hooks.json');
+  if (!fs.existsSync(hooksConfigPath)) { return; }
+
+  let hooksConfig;
+  try {
+    const raw = fs.readFileSync(hooksConfigPath, 'utf-8');
+    // Escape backslashes for Windows paths before injecting into JSON
+    const safeHooksDir = hooksDir.replace(/\\/g, '\\\\');
+    hooksConfig = JSON.parse(raw.replace(/__HOOKS_DIR__/g, safeHooksDir));
+  } catch (err) {
+    console.error(`[claude-sidecar] Warning: Could not read hooks config: ${err.message}`);
+    return;
+  }
+
+  const settingsPath = path.join(os.homedir(), '.claude', 'settings.json');
+  let settings = {};
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+  } catch {
+    // File doesn't exist or invalid — start fresh
+  }
+
+  if (!settings.hooks) { settings.hooks = {}; }
+
+  // Merge each hook event, appending sidecar hooks after existing ones
+  let registered = 0;
+  for (const [event, matchers] of Object.entries(hooksConfig.hooks || {})) {
+    if (!settings.hooks[event]) { settings.hooks[event] = []; }
+
+    for (const matcher of matchers) {
+      const cmd = (matcher.hooks && matcher.hooks[0] && matcher.hooks[0].command) || '';
+      // Skip if this exact hook command is already registered
+      const alreadyExists = settings.hooks[event].some((existing) => {
+        return existing.hooks && existing.hooks.some((h) => h.command === cmd);
+      });
+      if (!alreadyExists) {
+        settings.hooks[event].push(matcher);
+        registered++;
+      }
+    }
+  }
+
+  if (registered > 0) {
+    const settingsDir = path.dirname(settingsPath);
+    if (!fs.existsSync(settingsDir)) {
+      fs.mkdirSync(settingsDir, { recursive: true, mode: 0o700 });
+    }
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), { mode: 0o600 });
+  }
+
+  // First-run notice
+  console.log('');
+  console.log('[claude-sidecar] Activity monitoring hooks registered:');
+  console.log('  - PreToolUse: auto-security gate (git commit/push/PR)');
+  console.log('  - PostToolUse: BMAD artifact trigger + event collection');
+  console.log('  - PostToolUseFailure: failure event collection');
+  console.log('');
+  console.log('  Auto-skills suggest security scans, code reviews, and unblock');
+  console.log('  assistance at key workflow moments.');
+  console.log('');
+  console.log('  To disable: sidecar auto-skills --off');
+  console.log('  Config: ~/.config/sidecar/config.json');
+}
+
 function main() {
   console.log('[claude-sidecar] Installing...');
   installSkill();
   registerClaudeCode();
   registerClaudeDesktop();
+  registerHooks();
+
+  // Warn if jq is not available (hooks degrade gracefully but lose functionality)
+  try {
+    execFileSync('jq', ['--version'], { stdio: 'pipe', timeout: 5000 });
+  } catch {
+    console.log('');
+    console.log('[claude-sidecar] Warning: `jq` is not installed.');
+    console.log('  Activity monitoring hooks require jq for JSON parsing.');
+    console.log('  Install it: brew install jq (macOS) or apt install jq (Linux)');
+    console.log('  Without jq, hooks will degrade gracefully (auto-skills still work via description-matching).');
+  }
 
   console.log('');
   console.log('[claude-sidecar] Setup:');
@@ -165,4 +248,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { addMcpToConfigFile };
+module.exports = { addMcpToConfigFile, registerHooks };

@@ -103,6 +103,7 @@ src/
 │   ├── api-key-store.js  # Maps provider IDs to environment variable names
 │   ├── api-key-validation.js  # Validation endpoints per provider
 │   ├── auth-json.js  # Known provider IDs that map to sidecar's PROVIDER_ENV_MAP
+│   ├── auto-skills-config.js  # Valid auto-skill names (keys in autoSkills config)
 │   ├── config.js  # Default model alias map — short names to full OpenRouter model identifiers
 │   ├── logger.js  # Structured Logger Module
 │   ├── mcp-discovery.js  # MCP Discovery - Discovers MCP servers from parent LLM configuration
@@ -164,6 +165,7 @@ scripts/
 ├── integration-test.sh
 ├── list-models.js
 ├── postinstall.js  # Install skill files to ~/.claude/skills/
+├── preuninstall.js  # Sidecar hook script filenames — used to identify our hooks regardless of install path
 ├── test-tools.sh
 ├── validate-docs.js  # * Main entry point.
 ├── validate-thinking.js
@@ -190,7 +192,7 @@ evals/
 <!-- AUTO:modules -->
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
-| `cli-handlers.js` | CLI Command Handlers | `handleSetup()`, `handleAbort()`, `handleUpdate()`, `handleMcp()` |
+| `cli-handlers.js` | CLI Command Handlers | `handleSetup()`, `handleAbort()`, `handleUpdate()`, `handleMcp()`, `handleAutoSkills()` |
 | `cli.js` | * Default values per spec §4.1 | `parseArgs()`, `validateStartArgs()`, `getUsage()`, `DEFAULTS()` |
 | `conflict.js` | File Conflict Detection Module | `detectConflicts()`, `formatConflictWarning()` |
 | `context-compression.js` | Context Compression Module | `compressContext()`, `estimateTokenCount()`, `buildPreamble()`, `DEFAULT_TOKEN_LIMIT()` |
@@ -223,6 +225,7 @@ evals/
 | `utils/api-key-store.js` | Maps provider IDs to environment variable names | `getEnvPath()`, `readApiKeys()`, `readApiKeyHints()`, `readApiKeyValues()`, `saveApiKey()` |
 | `utils/api-key-validation.js` | Validation endpoints per provider | `validateApiKey()`, `validateOpenRouterKey()`, `VALIDATION_ENDPOINTS()` |
 | `utils/auth-json.js` | Known provider IDs that map to sidecar's PROVIDER_ENV_MAP | `readAuthJsonKeys()`, `importFromAuthJson()`, `checkAuthJson()`, `removeFromAuthJson()`, `AUTH_JSON_PATH()` |
+| `utils/auto-skills-config.js` | Valid auto-skill names (keys in autoSkills config) | `VALID_SKILL_NAMES()`, `SKILL_LABELS()`, `getAutoSkillsConfig()`, `isSkillEnabled()`, `isMonitoringEnabled()` |
 | `utils/config.js` | Default model alias map — short names to full OpenRouter model identifiers | `getConfigDir()`, `getConfigPath()`, `loadConfig()`, `saveConfig()`, `getDefaultAliases()` |
 | `utils/logger.js` | Structured Logger Module | `logger()`, `LOG_LEVELS()` |
 | `utils/mcp-discovery.js` | MCP Discovery - Discovers MCP servers from parent LLM configuration | `discoverParentMcps()`, `discoverClaudeCodeMcps()`, `discoverCoworkMcps()`, `normalizeMcpJson()` |

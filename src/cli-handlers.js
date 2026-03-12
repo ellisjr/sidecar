@@ -5,6 +5,7 @@
  * under the 300-line limit.
  */
 
+/* eslint-disable no-console */
 const fs = require('fs');
 const path = require('path');
 const { validateTaskId, safeSessionDir } = require('./utils/validators');
@@ -105,7 +106,7 @@ async function handleUpdate() {
   }
   const result = await performUpdate();
   if (result.success) {
-    console.log(`Updated successfully! Run 'sidecar --version' to verify.`);
+    console.log('Updated successfully! Run \'sidecar --version\' to verify.');
   } else {
     console.error(`Update failed: ${result.error}`);
     process.exit(1);
@@ -121,9 +122,68 @@ async function handleMcp() {
   await startMcpServer();
 }
 
+/**
+ * Handle 'sidecar auto-skills' command
+ * Lists status or enables/disables auto-skills
+ */
+function handleAutoSkills(args) {
+  const {
+    getAutoSkillsStatus,
+    setAutoSkillsEnabled,
+    resolveSkillNames,
+    VALID_SKILL_NAMES,
+    SKILL_LABELS,
+  } = require('./utils/auto-skills-config');
+
+  const on = args.on;
+  const off = args.off;
+  const skillArgs = args._.slice(1);
+
+  // Reject mutually exclusive flags
+  if (on && off) {
+    console.error('Error: --on and --off cannot be used together');
+    process.exit(1);
+  }
+
+  // Reject positional args without --on/--off
+  if (!on && !off && skillArgs.length > 0) {
+    console.error('Error: specify --on or --off with skill names');
+    console.error('Usage: sidecar auto-skills --off review security');
+    process.exit(1);
+  }
+
+  // No flags — show status
+  if (!on && !off) {
+    console.log(getAutoSkillsStatus());
+    return;
+  }
+
+  const enabled = !!on;
+
+  if (skillArgs.length === 0) {
+    // Master switch
+    setAutoSkillsEnabled(enabled);
+    console.log(`Auto-skills ${enabled ? 'enabled' : 'disabled'}.`);
+    return;
+  }
+
+  const { valid, invalid } = resolveSkillNames(skillArgs);
+  if (invalid.length > 0) {
+    const validNames = VALID_SKILL_NAMES.map((k) => SKILL_LABELS[k]).join(', ');
+    console.error(`Unknown skill(s): ${invalid.join(', ')}`);
+    console.error(`Valid names: ${validNames}`);
+    process.exit(1);
+  }
+
+  setAutoSkillsEnabled(enabled, valid);
+  const labels = valid.map((k) => SKILL_LABELS[k]).join(', ');
+  console.log(`${labels}: ${enabled ? 'enabled' : 'disabled'}.`);
+}
+
 module.exports = {
   handleSetup,
   handleAbort,
   handleUpdate,
   handleMcp,
+  handleAutoSkills,
 };

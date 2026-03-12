@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# PreToolUse hook: intercept git commit/push/PR creation for auto-security.
+#
+# Reads JSON from stdin (Claude Code hook contract).
+# If the Bash command is a git commit, git push, or gh pr create,
+# injects additionalContext recommending auto-security scan.
+#
+# Phase 1: shell-only, no Node.js dependency.
+
+set -euo pipefail
+
+# Safety guard: exit if this script was removed but hook still registered
+[ -f "$0" ] || exit 0
+
+# ── Config check ──────────────────────────────────────────────────────
+# Note: jq's // operator treats false as falsy, so we use explicit type checks
+CONFIG_PATH="${HOME}/.config/sidecar/config.json"
+if [ -f "$CONFIG_PATH" ] && command -v jq >/dev/null 2>&1; then
+  MASTER=$(jq -r '.autoSkills.enabled | if type == "boolean" then . else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  SECURITY=$(jq -r '.autoSkills.security.enabled | if type == "boolean" then . else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  MONITORING=$(jq -r '.monitoring.enabled | if type == "boolean" then . else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$MASTER" = "false" ] || [ "$SECURITY" = "false" ] || [ "$MONITORING" = "false" ]; then
+    exit 0
+  fi
+fi
+
+# ── Read stdin to temp file (avoid ARG_MAX on large payloads) ─────────
+TMP_JSON=$(mktemp)
+trap 'rm -f "$TMP_JSON"' EXIT
+cat > "$TMP_JSON"
+
+# Extract the Bash command from tool_input.command
+COMMAND=""
+if command -v jq >/dev/null 2>&1; then
+  COMMAND=$(jq -r '.tool_input.command // ""' "$TMP_JSON" 2>/dev/null || echo "")
+fi
+
+# If jq not available or command empty, allow through
+if [ -z "$COMMAND" ]; then
+  exit 0
+fi
+
+# ── Pattern match ─────────────────────────────────────────────────────
+# Check for git commit, git push, gh pr create
+# Uses printf (not echo) to avoid flag injection with commands starting with -n/-e
+# Includes semicolons in boundary pattern to catch "git add .; git commit"
+IS_COMMIT=false
+if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+\s*)git\s+commit(\s|$)'; then
+  IS_COMMIT=true
+fi
+if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+\s*)git\s+push(\s|$)'; then
+  IS_COMMIT=true
+fi
+if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+\s*)gh\s+pr\s+create(\s|$)'; then
+  IS_COMMIT=true
+fi
+
+if [ "$IS_COMMIT" = "false" ]; then
+  exit 0
+fi
+
+# ── Output recommendation ────────────────────────────────────────────
+# Use hookSpecificOutput.additionalContext to reach Claude's context
+cat <<'HOOK_OUTPUT'
+{
+  "hookSpecificOutput": {
+    "additionalContext": "IMPORTANT: A git commit, push, or PR creation was detected. Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill 'sidecar-auto-security'. If the user has explicitly declined a security scan for these changes, proceed without one."
+  }
+}
+HOOK_OUTPUT

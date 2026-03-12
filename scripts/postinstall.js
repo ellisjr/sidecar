@@ -151,9 +151,11 @@ function registerClaudeDesktop() {
 
 /**
  * Merge sidecar hook matchers into settings, deduplicating by script basename.
+ * Only counts a hook as "registered" if it actually changed.
+ * Uses full command path comparison to avoid removing unrelated user hooks.
  * @param {object} settings - Claude settings object (mutated in place)
  * @param {object} hooksConfig - Parsed hooks.json with resolved paths
- * @returns {number} Count of newly registered hooks
+ * @returns {number} Count of newly registered or changed hooks
  */
 function mergeHooks(settings, hooksConfig) {
   if (!settings.hooks) { settings.hooks = {}; }
@@ -164,10 +166,20 @@ function mergeHooks(settings, hooksConfig) {
 
     for (const matcher of matchers) {
       const cmd = (matcher.hooks && matcher.hooks[0] && matcher.hooks[0].command) || '';
+      // Check if this exact hook already exists (by full command path)
+      const alreadyExists = settings.hooks[event].some((existing) => {
+        return existing.hooks && existing.hooks.some((h) => h.command === cmd);
+      });
+      if (alreadyExists) { continue; }
+      // Remove old sidecar entries (same basename, different path) for upgrades
       const basename = path.basename(cmd);
-      // Deduplicate by basename so upgrades (which change install path) replace old entries
       settings.hooks[event] = settings.hooks[event].filter((existing) => {
-        return !(existing.hooks && existing.hooks.some((h) => path.basename(h.command) === basename));
+        if (!existing.hooks) { return true; }
+        return !existing.hooks.some((h) => {
+          const hBase = path.basename(h.command);
+          // Only remove if it looks like a sidecar hook (lives in a node_modules path)
+          return hBase === basename && h.command.includes('claude-sidecar');
+        });
       });
       settings.hooks[event].push(matcher);
       registered++;
@@ -188,7 +200,8 @@ function registerHooks() {
   let hooksConfig;
   try {
     const raw = fs.readFileSync(hooksConfigPath, 'utf-8');
-    const safeHooksDir = hooksDir.replace(/\\/g, '\\\\');
+    // Use JSON.stringify to properly escape all special chars (quotes, backslashes, etc.)
+    const safeHooksDir = JSON.stringify(hooksDir).slice(1, -1);
     hooksConfig = JSON.parse(raw.replace(/__HOOKS_DIR__/g, safeHooksDir));
   } catch (err) {
     console.error(`[claude-sidecar] Warning: Could not read hooks config: ${err.message}`);

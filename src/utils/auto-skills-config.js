@@ -77,7 +77,12 @@ function setAutoSkillsEnabled(enabled, skillNames) {
     }
   }
 
-  saveConfig(config);
+  try {
+    saveConfig(config);
+  } catch (err) {
+    const { logger } = require('./logger');
+    logger.warn(`Could not save config: ${err.message}`);
+  }
 }
 
 /**

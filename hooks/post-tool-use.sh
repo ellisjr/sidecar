@@ -25,8 +25,8 @@ if [ -f "$CONFIG_PATH" ] && command -v jq >/dev/null 2>&1; then
   MONITORING_ON=$(jq -r '.monitoring.enabled | if type == "boolean" then . else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
-# If master auto-skills switch or monitoring is off, skip everything
-if [ "$MASTER_ON" = "false" ] || [ "$MONITORING_ON" = "false" ]; then
+# If master auto-skills switch is off, skip everything
+if [ "$MASTER_ON" = "false" ]; then
   exit 0
 fi
 
@@ -43,9 +43,12 @@ TOOL_NAME=$(jq -r '.tool_name // ""' "$TMP_JSON" 2>/dev/null || echo "")
 SESSION_ID=$(jq -r '.session_id // ""' "$TMP_JSON" 2>/dev/null || echo "")
 
 # ── Event collection ─────────────────────────────────────────────────
-# Append structured event to session-specific JSONL file
+# Append structured event to session-specific JSONL file (controlled by monitoring.enabled)
 # Sanitize SESSION_ID to alphanumeric/hyphens only (prevent path traversal)
-SAFE_SID=$(printf '%s' "$SESSION_ID" | tr -cd 'a-zA-Z0-9_-')
+SAFE_SID=""
+if [ "$MONITORING_ON" != "false" ]; then
+  SAFE_SID=$(printf '%s' "$SESSION_ID" | tr -cd 'a-zA-Z0-9_-')
+fi
 if [ -n "$SAFE_SID" ]; then
   EVENT_FILE="${TMPDIR:-/tmp}/sidecar-monitor-${SAFE_SID}.jsonl"
 

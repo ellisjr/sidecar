@@ -374,4 +374,3 @@ GEMINI.md and AGENTS.md are symlinks to CLAUDE.md -- no sync needed.
 - [docs/electron-testing.md](docs/electron-testing.md) - CDP patterns
 - [docs/jsdoc-setup.md](docs/jsdoc-setup.md) - JSDoc, `.d.ts` generation
 - [evals/README.md](evals/README.md) - Agentic eval system
-- [docs/plans/index.md](docs/plans/index.md) - Design plans

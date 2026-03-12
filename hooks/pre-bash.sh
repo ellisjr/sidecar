@@ -18,8 +18,7 @@ CONFIG_PATH="${HOME}/.config/sidecar/config.json"
 if [ -f "$CONFIG_PATH" ] && command -v jq >/dev/null 2>&1; then
   MASTER=$(jq -r '.autoSkills.enabled | if type == "boolean" then . else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
   SECURITY=$(jq -r '.autoSkills.security.enabled | if type == "boolean" then . else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
-  MONITORING=$(jq -r '.monitoring.enabled | if type == "boolean" then . else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
-  if [ "$MASTER" = "false" ] || [ "$SECURITY" = "false" ] || [ "$MONITORING" = "false" ]; then
+  if [ "$MASTER" = "false" ] || [ "$SECURITY" = "false" ]; then
     exit 0
   fi
 fi

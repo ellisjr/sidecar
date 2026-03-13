@@ -205,6 +205,10 @@ function getTools() {
       model: safeModel.optional().describe(
         `Override model — short alias (${aliasNames}) or full provider/model ID. Defaults to the original session's model.`
       ),
+      agent: z.enum(['Chat', 'Plan', 'Build']).optional().describe(
+        'Agent mode override. Chat: reads auto, writes ask. Plan: read-only. ' +
+        'Build: full auto. Defaults to Build in headless mode, Chat in interactive.'
+      ),
       noUi: z.boolean().optional().default(false).describe(
         'Run headless. Default false (opens Electron window).'
       ),

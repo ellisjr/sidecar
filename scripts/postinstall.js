@@ -166,16 +166,20 @@ function mergeHooks(settings, hooksConfig) {
 
     for (const matcher of matchers) {
       const cmd = (matcher.hooks && matcher.hooks[0] && matcher.hooks[0].command) || '';
-      // Check if this exact hook already exists (by full command path)
-      const alreadyExists = settings.hooks[event].some((existing) => {
-        return existing.hooks && existing.hooks.some((h) => h.command === cmd);
+      // Check if this exact hook already exists (same command path AND same matcher)
+      const exactMatch = settings.hooks[event].some((existing) => {
+        return existing.matcher === matcher.matcher &&
+          existing.hooks && existing.hooks.some((h) => h.command === cmd);
       });
-      if (alreadyExists) { continue; }
-      // Remove old sidecar entries (same basename, different path) for upgrades
+      if (exactMatch) { continue; }
+      // Remove old sidecar entries (same command or same basename with sidecar path)
       const basename = path.basename(cmd);
       settings.hooks[event] = settings.hooks[event].filter((existing) => {
         if (!existing.hooks) { return true; }
         return !existing.hooks.some((h) => {
+          if (typeof h.command !== 'string') { return false; }
+          // Exact command match (same path, different matcher — upgrade scenario)
+          if (h.command === cmd) { return true; }
           const hBase = path.basename(h.command);
           // Only remove if it looks like a sidecar hook (lives in a node_modules path)
           return hBase === basename && h.command.includes('claude-sidecar');
@@ -202,7 +206,7 @@ function registerHooks() {
     const raw = fs.readFileSync(hooksConfigPath, 'utf-8');
     // Use JSON.stringify to properly escape all special chars (quotes, backslashes, etc.)
     const safeHooksDir = JSON.stringify(hooksDir).slice(1, -1);
-    hooksConfig = JSON.parse(raw.replace(/__HOOKS_DIR__/g, safeHooksDir));
+    hooksConfig = JSON.parse(raw.replace(/__HOOKS_DIR__/g, () => safeHooksDir));
   } catch (err) {
     console.error(`[claude-sidecar] Warning: Could not read hooks config: ${err.message}`);
     return;

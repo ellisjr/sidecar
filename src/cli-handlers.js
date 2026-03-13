@@ -166,7 +166,10 @@ function handleAutoSkills(args) {
   }
 
   if (skillArgs.length === 0) {
-    setAutoSkillsEnabled(enabled);
+    if (!setAutoSkillsEnabled(enabled)) {
+      console.error('Error: could not save config');
+      process.exit(1);
+    }
     console.log(`Auto-skills ${enabled ? 'enabled' : 'disabled'}.`);
     return;
   }
@@ -179,7 +182,10 @@ function handleAutoSkills(args) {
     process.exit(1);
   }
 
-  setAutoSkillsEnabled(enabled, valid);
+  if (!setAutoSkillsEnabled(enabled, valid)) {
+    console.error('Error: could not save config');
+    process.exit(1);
+  }
   const labels = valid.map((k) => SKILL_LABELS[k]).join(', ');
   console.log(`${labels}: ${enabled ? 'enabled' : 'disabled'}.`);
 }

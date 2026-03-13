@@ -63,6 +63,7 @@ function isMonitoringEnabled(config) {
  * Enable or disable auto-skills and save to config.
  * @param {boolean} enabled - Whether to enable or disable
  * @param {string[]} [skillNames] - Specific skills, or empty for master switch
+ * @returns {boolean} true if config was saved successfully
  */
 function setAutoSkillsEnabled(enabled, skillNames) {
   const config = loadConfig() || {};
@@ -79,9 +80,11 @@ function setAutoSkillsEnabled(enabled, skillNames) {
 
   try {
     saveConfig(config);
+    return true;
   } catch (err) {
     const { logger } = require('./logger');
-    logger.warn(`Could not save config: ${err.message}`);
+    logger.error(`Could not save config: ${err.message}`);
+    return false;
   }
 }
 

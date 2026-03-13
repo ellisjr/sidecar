@@ -135,9 +135,24 @@ describe('Auto-Skills Config Module', () => {
 
     test('creates config file if missing', () => {
       const { setAutoSkillsEnabled } = loadModule();
-      setAutoSkillsEnabled(false, ['unblock']);
+      const result = setAutoSkillsEnabled(false, ['unblock']);
+      expect(result).toBe(true);
       const raw = JSON.parse(fs.readFileSync(path.join(tempDir, 'config.json'), 'utf-8'));
       expect(raw.autoSkills.unblock.enabled).toBe(false);
+    });
+
+    test('returns false when saveConfig fails', () => {
+      // Make config dir read-only so writeFileSync fails
+      const configPath = path.join(tempDir, 'config.json');
+      fs.writeFileSync(configPath, '{}');
+      fs.chmodSync(configPath, 0o444);
+      fs.chmodSync(tempDir, 0o555);
+      const { setAutoSkillsEnabled } = loadModule();
+      const result = setAutoSkillsEnabled(true);
+      expect(result).toBe(false);
+      // Restore permissions for cleanup
+      fs.chmodSync(tempDir, 0o755);
+      fs.chmodSync(configPath, 0o644);
     });
   });
 

@@ -71,6 +71,45 @@ describe('mergeHooks', () => {
     const count = mergeHooks(settings, { hooks: {} });
     expect(count).toBe(0);
   });
+
+  test('replaces hook when command matches but matcher changed (upgrade)', () => {
+    const settings = {
+      hooks: {
+        PostToolUse: [{
+          matcher: 'Edit|Write',
+          hooks: [{ type: 'command', command: '/path/claude-sidecar/hooks/post-tool-use.sh' }],
+        }],
+      },
+    };
+    const config = {
+      hooks: {
+        PostToolUse: [{
+          matcher: 'Edit|Write|Bash|MultiEdit',
+          hooks: [{ type: 'command', command: '/path/claude-sidecar/hooks/post-tool-use.sh' }],
+        }],
+      },
+    };
+    const count = mergeHooks(settings, config);
+    expect(count).toBe(1);
+    expect(settings.hooks.PostToolUse).toHaveLength(1);
+    expect(settings.hooks.PostToolUse[0].matcher).toBe('Edit|Write|Bash|MultiEdit');
+  });
+
+  test('handles malformed hook entries without command property', () => {
+    const settings = {
+      hooks: {
+        PreToolUse: [
+          { matcher: 'Bash', hooks: [{ type: 'command' }] },
+        ],
+      },
+    };
+    const config = makeHooksConfig({ PreToolUse: '/path/claude-sidecar/hooks/pre-bash.sh' });
+    // Should not throw
+    const count = mergeHooks(settings, config);
+    expect(count).toBe(1);
+    // Malformed entry preserved, new hook appended
+    expect(settings.hooks.PreToolUse).toHaveLength(2);
+  });
 });
 
 describe('Postinstall MCP registration', () => {

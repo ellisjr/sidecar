@@ -193,53 +193,53 @@ evals/
 <!-- AUTO:modules -->
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
-| `cli-handlers.js` | CLI Command Handlers | `handleSetup()`, `handleAbort()`, `handleUpdate()`, `handleMcp()`, `handleAutoSkills()` |
-| `cli-usage.js` | CLI Usage Text | `getUsage()` |
-| `cli.js` | * Default values per spec §4.1 | `parseArgs()`, `validateStartArgs()`, `getUsage()`, `DEFAULTS()` |
-| `conflict.js` | File Conflict Detection Module | `detectConflicts()`, `formatConflictWarning()` |
-| `context-compression.js` | Context Compression Module | `compressContext()`, `estimateTokenCount()`, `buildPreamble()`, `DEFAULT_TOKEN_LIMIT()` |
-| `context.js` | Context Filtering Module | `filterContext()`, `parseDuration()`, `estimateTokens()`, `takeLastNTurns()` |
-| `drift.js` | Context Drift Detection Module | `calculateDrift()`, `formatDriftWarning()`, `countTurnsSince()`, `isDriftSignificant()` |
-| `environment.js` | Environment Detection Module | `inferClient()`, `getSessionRoot()`, `detectEnvironment()`, `VALID_CLIENTS()` |
-| `headless.js` | * Default timeout: 15 minutes per spec §6.2 | `runHeadless()`, `waitForServer()`, `extractSummary()`, `formatFoldOutput()`, `DEFAULT_TIMEOUT()` |
-| `index.js` | Claude Sidecar - Main Module | `APIs()`, `startSidecar()`, `listSidecars()`, `resumeSidecar()`, `continueSidecar()` |
-| `jsonl-parser.js` | JSONL Parser | `parseJSONLLine()`, `readJSONL()`, `extractTimestamp()`, `formatMessage()`, `formatContext()` |
-| `mcp-server.js` | @module mcp-server — Sidecar MCP Server (stdio transport) | `handlers()`, `startMcpServer()`, `getProjectDir()` |
-| `mcp-tools.js` | Zod pattern for safe task IDs (alphanumeric, hyphens, underscores only) | `getTools()`, `getGuideText()`, `safeTaskId()`, `safeModel()` |
-| `opencode-client.js` | OpenCode SDK Client Wrapper | `parseModelString()`, `createClient()`, `createSession()`, `createChildSession()`, `sendPrompt()` |
-| `prompt-builder.js` | System Prompt Builder | `buildSystemPrompt()`, `buildPrompts()`, `buildEnvironmentSection()`, `getSummaryTemplate()`, `SUMMARY_TEMPLATE()` |
-| `session-manager.js` | * Session status constants | `createSession()`, `updateSession()`, `getSession()`, `saveConversation()`, `saveSummary()` |
-| `session.js` | Session Resolver | `encodeProjectPath()`, `decodeProjectPath()`, `getSessionDirectory()`, `getSessionId()`, `resolveSession()` |
-| `prompts/cowork-agent-prompt.js` | Cowork Agent Prompt | `buildCoworkAgentPrompt()` |
-| `sidecar/context-builder.js` | Context Builder Module | `buildContext()`, `parseDuration()`, `resolveSessionFile()`, `applyContextFilters()`, `findCoworkSession()` |
-| `sidecar/continue.js` | Load previous session data (metadata, summary, conversation) | `loadPreviousSession()`, `buildContinuationContext()`, `createContinueSessionMetadata()`, `continueSidecar()` |
-| `sidecar/crash-handler.js` | Crash Handler - Updates metadata to 'error' on uncaught exceptions | `installCrashHandler()` |
-| `sidecar/interactive.js` | Check if Electron is available (lazy loading guard) | `getElectronPath()`, `checkElectronAvailable()`, `buildElectronEnv()`, `handleElectronProcess()`, `runInteractive()` |
-| `sidecar/progress.js` | Lifecycle stage labels | `readProgress()`, `writeProgress()`, `extractLatest()`, `computeLastActivity()`, `STAGE_LABELS()` |
-| `sidecar/read.js` | Sidecar Read Operations Module | `formatAge()`, `listSidecars()`, `readSidecar()` |
-| `sidecar/resume.js` | Load session metadata from session directory | `loadSessionMetadata()`, `loadInitialContext()`, `checkFileDrift()`, `buildDriftWarning()`, `buildResumeUserMessage()` |
-| `sidecar/session-utils.js` | Standard heartbeat interval in milliseconds | `HEARTBEAT_INTERVAL()`, `SessionPaths()`, `saveInitialContext()`, `finalizeSession()`, `outputSummary()` |
-| `sidecar/setup-window.js` | Setup Window Launcher | `launchSetupWindow()` |
-| `sidecar/setup.js` | Sidecar Setup Wizard | `addAlias()`, `createDefaultConfig()`, `detectApiKeys()`, `runInteractiveSetup()`, `runReadlineSetup()` |
-| `sidecar/start.js` | Generate a unique 8-character hex task ID | `generateTaskId()`, `createSessionMetadata()`, `buildMcpConfig()`, `checkElectronAvailable()`, `runInteractive()` |
-| `utils/agent-mapping.js` | * All OpenCode native agent names (lowercase) | `PRIMARY_AGENTS()`, `OPENCODE_AGENTS()`, `HEADLESS_SAFE_AGENTS()`, `mapAgentToOpenCode()`, `isValidAgent()` |
-| `utils/alias-resolver.js` | Alias Resolver Utilities | `applyDirectApiFallback()`, `autoRepairAlias()` |
-| `utils/api-key-store.js` | Maps provider IDs to environment variable names | `getEnvPath()`, `readApiKeys()`, `readApiKeyHints()`, `readApiKeyValues()`, `saveApiKey()` |
-| `utils/api-key-validation.js` | Validation endpoints per provider | `validateApiKey()`, `validateOpenRouterKey()`, `VALIDATION_ENDPOINTS()` |
-| `utils/auth-json.js` | Known provider IDs that map to sidecar's PROVIDER_ENV_MAP | `readAuthJsonKeys()`, `importFromAuthJson()`, `checkAuthJson()`, `removeFromAuthJson()`, `AUTH_JSON_PATH()` |
-| `utils/auto-skills-config.js` | Valid auto-skill names (keys in autoSkills config) | `VALID_SKILL_NAMES()`, `SKILL_LABELS()`, `getAutoSkillsConfig()`, `isSkillEnabled()`, `isMonitoringEnabled()` |
-| `utils/config.js` | Default model alias map — short names to full OpenRouter model identifiers | `getConfigDir()`, `getConfigPath()`, `loadConfig()`, `saveConfig()`, `getDefaultAliases()` |
-| `utils/logger.js` | Structured Logger Module | `logger()`, `LOG_LEVELS()` |
-| `utils/mcp-discovery.js` | MCP Discovery - Discovers MCP servers from parent LLM configuration | `discoverParentMcps()`, `discoverClaudeCodeMcps()`, `discoverCoworkMcps()`, `normalizeMcpJson()` |
-| `utils/mcp-validators.js` | MCP Validators | `validateMcpSpec()`, `validateMcpConfigFile()` |
-| `utils/model-fetcher.js` | Hardcoded Anthropic models (no public listing endpoint) | `fetchModelsFromProvider()`, `fetchAllModels()`, `groupModelsByFamily()`, `ANTHROPIC_MODELS()`, `PROVIDER_FAMILY_NAMES()` |
-| `utils/model-validator.js` | Alias-to-search-term mapping for filtering provider model lists | `validateDirectModel()`, `filterRelevantModels()`, `normalizeModelId()` |
-| `utils/path-setup.js` | Ensures that the project's node_modules/.bin directory is included in the PATH. | `ensureNodeModulesBinInPath()` |
-| `utils/server-setup.js` | Server Setup Utilities | `DEFAULT_PORT()`, `isPortInUse()`, `getPortPid()`, `killPortProcess()`, `ensurePortAvailable()` |
-| `utils/start-helpers.js` | Start Command Helpers | `resolveModelFromArgs()`, `validateFallbackModel()` |
-| `utils/thinking-validators.js` | Thinking Level Validators | `MODEL_THINKING_SUPPORT()`, `getSupportedThinkingLevels()`, `validateThinkingLevel()` |
-| `utils/updater.js` | @type {import('update-notifier').UpdateNotifier|null} | `initUpdateCheck()`, `getUpdateInfo()`, `notifyUpdate()`, `performUpdate()` |
-| `utils/validators.js` | * Provider to API key mapping | `VALID_AGENT_MODES()`, `PROVIDER_KEY_MAP()`, `MODEL_THINKING_SUPPORT()`, `TASK_ID_PATTERN()`, `validateTaskId()` |
+| `cli-handlers.js` | CLI Command Handlers | `handleSetup`, `handleAbort`, `handleUpdate`, `handleMcp`, `handleAutoSkills` |
+| `cli-usage.js` | CLI Usage Text | `getUsage` |
+| `cli.js` | * Default values per spec §4.1 | `parseArgs`, `validateStartArgs`, `getUsage`, `DEFAULTS` |
+| `conflict.js` | File Conflict Detection Module | `detectConflicts`, `formatConflictWarning` |
+| `context-compression.js` | Context Compression Module | `compressContext`, `estimateTokenCount`, `buildPreamble`, `DEFAULT_TOKEN_LIMIT` |
+| `context.js` | Context Filtering Module | `filterContext`, `parseDuration`, `estimateTokens`, `takeLastNTurns` |
+| `drift.js` | Context Drift Detection Module | `calculateDrift`, `formatDriftWarning`, `countTurnsSince`, `isDriftSignificant` |
+| `environment.js` | Environment Detection Module | `inferClient`, `getSessionRoot`, `detectEnvironment`, `VALID_CLIENTS` |
+| `headless.js` | * Default timeout: 15 minutes per spec §6.2 | `runHeadless`, `waitForServer`, `extractSummary`, `formatFoldOutput`, `DEFAULT_TIMEOUT` |
+| `index.js` | Claude Sidecar - Main Module | `APIs`, `startSidecar`, `listSidecars`, `resumeSidecar`, `continueSidecar` |
+| `jsonl-parser.js` | JSONL Parser | `parseJSONLLine`, `readJSONL`, `extractTimestamp`, `formatMessage`, `formatContext` |
+| `mcp-server.js` | @module mcp-server — Sidecar MCP Server (stdio transport) | `handlers`, `startMcpServer`, `getProjectDir` |
+| `mcp-tools.js` | Zod pattern for safe task IDs (alphanumeric, hyphens, underscores only) | `getTools`, `getGuideText`, `safeTaskId`, `safeModel` |
+| `opencode-client.js` | OpenCode SDK Client Wrapper | `parseModelString`, `createClient`, `createSession`, `createChildSession`, `sendPrompt` |
+| `prompt-builder.js` | System Prompt Builder | `buildSystemPrompt`, `buildPrompts`, `buildEnvironmentSection`, `getSummaryTemplate`, `SUMMARY_TEMPLATE` |
+| `session-manager.js` | * Session status constants | `createSession`, `updateSession`, `getSession`, `saveConversation`, `saveSummary` |
+| `session.js` | Session Resolver | `encodeProjectPath`, `decodeProjectPath`, `getSessionDirectory`, `getSessionId`, `resolveSession` |
+| `prompts/cowork-agent-prompt.js` | Cowork Agent Prompt | `buildCoworkAgentPrompt` |
+| `sidecar/context-builder.js` | Context Builder Module | `buildContext`, `parseDuration`, `resolveSessionFile`, `applyContextFilters`, `findCoworkSession` |
+| `sidecar/continue.js` | Load previous session data (metadata, summary, conversation) | `loadPreviousSession`, `buildContinuationContext`, `createContinueSessionMetadata`, `continueSidecar` |
+| `sidecar/crash-handler.js` | Crash Handler - Updates metadata to 'error' on uncaught exceptions | `installCrashHandler` |
+| `sidecar/interactive.js` | Check if Electron is available (lazy loading guard) | `getElectronPath`, `checkElectronAvailable`, `buildElectronEnv`, `handleElectronProcess`, `runInteractive` |
+| `sidecar/progress.js` | Lifecycle stage labels | `readProgress`, `writeProgress`, `extractLatest`, `computeLastActivity`, `STAGE_LABELS` |
+| `sidecar/read.js` | Sidecar Read Operations Module | `formatAge`, `listSidecars`, `readSidecar` |
+| `sidecar/resume.js` | Load session metadata from session directory | `loadSessionMetadata`, `loadInitialContext`, `checkFileDrift`, `buildDriftWarning`, `buildResumeUserMessage` |
+| `sidecar/session-utils.js` | Standard heartbeat interval in milliseconds | `HEARTBEAT_INTERVAL`, `SessionPaths`, `saveInitialContext`, `finalizeSession`, `outputSummary` |
+| `sidecar/setup-window.js` | Setup Window Launcher | `launchSetupWindow` |
+| `sidecar/setup.js` | Sidecar Setup Wizard | `addAlias`, `createDefaultConfig`, `detectApiKeys`, `runInteractiveSetup`, `runReadlineSetup` |
+| `sidecar/start.js` | Generate a unique 8-character hex task ID | `generateTaskId`, `createSessionMetadata`, `buildMcpConfig`, `checkElectronAvailable`, `runInteractive` |
+| `utils/agent-mapping.js` | * All OpenCode native agent names (lowercase) | `PRIMARY_AGENTS`, `OPENCODE_AGENTS`, `HEADLESS_SAFE_AGENTS`, `mapAgentToOpenCode`, `isValidAgent` |
+| `utils/alias-resolver.js` | Alias Resolver Utilities | `applyDirectApiFallback`, `autoRepairAlias` |
+| `utils/api-key-store.js` | Maps provider IDs to environment variable names | `getEnvPath`, `readApiKeys`, `readApiKeyHints`, `readApiKeyValues`, `saveApiKey` |
+| `utils/api-key-validation.js` | Validation endpoints per provider | `validateApiKey`, `validateOpenRouterKey`, `VALIDATION_ENDPOINTS` |
+| `utils/auth-json.js` | Known provider IDs that map to sidecar's PROVIDER_ENV_MAP | `readAuthJsonKeys`, `importFromAuthJson`, `checkAuthJson`, `removeFromAuthJson`, `AUTH_JSON_PATH` |
+| `utils/auto-skills-config.js` | Valid auto-skill names (keys in autoSkills config) | `VALID_SKILL_NAMES`, `SKILL_LABELS`, `getAutoSkillsConfig`, `isSkillEnabled`, `isMonitoringEnabled` |
+| `utils/config.js` | Default model alias map — short names to full OpenRouter model identifiers | `getConfigDir`, `getConfigPath`, `loadConfig`, `saveConfig`, `getDefaultAliases` |
+| `utils/logger.js` | Structured Logger Module | `logger`, `LOG_LEVELS` |
+| `utils/mcp-discovery.js` | MCP Discovery - Discovers MCP servers from parent LLM configuration | `discoverParentMcps`, `discoverClaudeCodeMcps`, `discoverCoworkMcps`, `normalizeMcpJson` |
+| `utils/mcp-validators.js` | MCP Validators | `validateMcpSpec`, `validateMcpConfigFile` |
+| `utils/model-fetcher.js` | Hardcoded Anthropic models (no public listing endpoint) | `fetchModelsFromProvider`, `fetchAllModels`, `groupModelsByFamily`, `ANTHROPIC_MODELS`, `PROVIDER_FAMILY_NAMES` |
+| `utils/model-validator.js` | Alias-to-search-term mapping for filtering provider model lists | `validateDirectModel`, `filterRelevantModels`, `normalizeModelId` |
+| `utils/path-setup.js` | Ensures that the project's node_modules/.bin directory is included in the PATH. | `ensureNodeModulesBinInPath` |
+| `utils/server-setup.js` | Server Setup Utilities | `DEFAULT_PORT`, `isPortInUse`, `getPortPid`, `killPortProcess`, `ensurePortAvailable` |
+| `utils/start-helpers.js` | Start Command Helpers | `resolveModelFromArgs`, `validateFallbackModel` |
+| `utils/thinking-validators.js` | Thinking Level Validators | `MODEL_THINKING_SUPPORT`, `getSupportedThinkingLevels`, `validateThinkingLevel` |
+| `utils/updater.js` | @type {import('update-notifier').UpdateNotifier|null} | `initUpdateCheck`, `getUpdateInfo`, `notifyUpdate`, `performUpdate` |
+| `utils/validators.js` | * Provider to API key mapping | `VALID_AGENT_MODES`, `PROVIDER_KEY_MAP`, `MODEL_THINKING_SUPPORT`, `TASK_ID_PATTERN`, `validateTaskId` |
 <!-- /AUTO:modules -->
 
 ---

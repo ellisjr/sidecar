@@ -55,8 +55,11 @@ EVENT=$(jq -rc --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
   }' "$TMP_JSON" 2>/dev/null || echo "")
 
 if [ -n "$EVENT" ]; then
-  if [ ! -f "$EVENT_FILE" ]; then
-    (umask 177 && : > "$EVENT_FILE")
+  # Atomically create file with restrictive permissions (noclobber prevents TOCTOU)
+  (umask 177 && set -o noclobber && : > "$EVENT_FILE" 2>/dev/null) || true
+  # Verify ownership before appending
+  FILE_OWNER=$(stat -f '%u' "$EVENT_FILE" 2>/dev/null || stat -c '%u' "$EVENT_FILE" 2>/dev/null || echo "")
+  if [ "$FILE_OWNER" = "$(id -u)" ]; then
+    echo "$EVENT" >> "$EVENT_FILE"
   fi
-  echo "$EVENT" >> "$EVENT_FILE"
 fi

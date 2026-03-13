@@ -45,7 +45,7 @@ function isSkillEnabled(skillName, config) {
   const as = getAutoSkillsConfig(config);
   if (!as.enabled) { return false; }
   const skill = as[skillName];
-  return skill ? skill.enabled !== false : true;
+  return skill ? skill.enabled !== false : false;
 }
 
 /**
@@ -73,6 +73,11 @@ function setAutoSkillsEnabled(enabled, skillNames) {
     config.autoSkills.enabled = enabled;
   } else {
     for (const name of skillNames) {
+      if (!VALID_SKILL_NAMES.includes(name)) {
+        const { logger } = require('./logger');
+        logger.warn(`Ignoring invalid skill name: ${name}`);
+        continue;
+      }
       if (!config.autoSkills[name]) { config.autoSkills[name] = {}; }
       config.autoSkills[name].enabled = enabled;
     }

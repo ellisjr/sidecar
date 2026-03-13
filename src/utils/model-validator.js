@@ -91,8 +91,8 @@ function filterRelevantModels(models, alias) {
   const term = (ALIAS_SEARCH_TERMS[alias] || alias).toLowerCase();
 
   let filtered = models.filter(m =>
-    m.id.toLowerCase().includes(term) ||
-    m.name.toLowerCase().includes(term)
+    (m.id || '').toLowerCase().includes(term) ||
+    (m.name || '').toLowerCase().includes(term)
   );
 
   if (filtered.length === 0) { filtered = models; }

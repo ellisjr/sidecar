@@ -64,16 +64,19 @@ if [ -n "$SAFE_SID" ]; then
         file: (if .tool_name == "Bash" then ""
                elif .tool_name == "MultiEdit" then (.tool_input.edits[0].file_path // "")
                else (.tool_input.file_path // "") end),
-        success: (if .tool_name == "Bash" then ((.tool_response.exit_code // 0) == 0) else true end),
+        success: (if .tool_name == "Bash" then ((.tool_response.exit_code // 0) == 0)
+                  else true end),  # non-Bash tools: hook only fires on success
         command: (if .tool_name == "Bash" then (.tool_input.command // "") else "" end)
       }' "$TMP_JSON" 2>/dev/null || echo "")
 
     if [ -n "$EVENT" ]; then
-      # Create with restrictive permissions atomically (umask prevents TOCTOU window)
-      if [ ! -f "$EVENT_FILE" ]; then
-        (umask 177 && : > "$EVENT_FILE")
+      # Atomically create file with restrictive permissions (noclobber prevents TOCTOU)
+      (umask 177 && set -o noclobber && : > "$EVENT_FILE" 2>/dev/null) || true
+      # Verify ownership before appending
+      FILE_OWNER=$(stat -f '%u' "$EVENT_FILE" 2>/dev/null || stat -c '%u' "$EVENT_FILE" 2>/dev/null || echo "")
+      if [ "$FILE_OWNER" = "$(id -u)" ]; then
+        echo "$EVENT" >> "$EVENT_FILE"
       fi
-      echo "$EVENT" >> "$EVENT_FILE"
     fi
   fi
 fi

@@ -104,7 +104,7 @@ async function main() {
         await handleUpdate();
         break;
       case 'auto-skills':
-        handleAutoSkills(args);
+        await handleAutoSkills(args);
         break;
       default:
         console.error(`Unknown command: ${command}`);

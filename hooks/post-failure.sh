@@ -58,8 +58,13 @@ if [ -n "$EVENT" ]; then
   # Atomically create file with restrictive permissions (noclobber prevents TOCTOU)
   (umask 177 && set -o noclobber && : > "$EVENT_FILE" 2>/dev/null) || true
   # Verify ownership before appending
-  FILE_OWNER=$(stat -f '%u' "$EVENT_FILE" 2>/dev/null || stat -c '%u' "$EVENT_FILE" 2>/dev/null || echo "")
+  FILE_OWNER=$(stat -c '%u' "$EVENT_FILE" 2>/dev/null || stat -f '%u' "$EVENT_FILE" 2>/dev/null || echo "")
   if [ "$FILE_OWNER" = "$(id -u)" ]; then
-    echo "$EVENT" >> "$EVENT_FILE"
+    # Cap event file at 5MB to prevent unbounded growth
+    MAX_SIZE=5242880
+    FILE_SIZE=$(wc -c < "$EVENT_FILE" 2>/dev/null || echo 0)
+    if [ "$FILE_SIZE" -lt "$MAX_SIZE" ]; then
+      echo "$EVENT" >> "$EVENT_FILE"
+    fi
   fi
 fi

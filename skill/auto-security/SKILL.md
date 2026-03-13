@@ -67,10 +67,10 @@ Wait for the user's response:
 ### Step 2: Capture the diff
 
 Choose the right diff for the operation:
-- **For commits:** Run both `git diff` (unstaged) and `git diff --cached` (staged). Combine them into a single diff for the audit — this audits all changes, not just staged ones, to avoid silently missing unstaged code. Note: this is intentionally broader than strict Git staging semantics; if the user wants to audit only staged changes, they can say so.
+- **For commits:** Run `git diff --cached` (staged changes only). This matches what will actually be committed. If the staged diff is empty but `git diff` shows unstaged changes, inform the user that nothing is staged and skip the scan.
 - **For PRs/pushes:** Resolve the base branch using this fallback order: (1) `git symbolic-ref refs/remotes/origin/HEAD` to get the remote's default branch, (2) `@{upstream}` if no `origin` remote exists, (3) check if `main` or `master` branches exist locally, (4) ask the user. Then run `git diff $(git merge-base HEAD <base-branch>)...HEAD` to capture the full branch diff, not just the current working tree. This catches security issues from earlier commits on the branch.
 
-**If the diff is empty**, tell the user there are no changes to audit and skip to the commit flow. For commits, this means both staged and unstaged diffs are empty. For PRs/pushes, this means the branch diff against the default branch is empty (no commits to push).
+**If the diff is empty**, tell the user there are no changes to audit and skip to the commit flow. For commits, this means the staged diff is empty. For PRs/pushes, this means the branch diff against the default branch is empty (no commits to push).
 
 **If the diff exceeds ~500 lines**, prioritize files by security relevance rather than truncating arbitrarily. Include in full: files handling authentication/authorization, user input processing, API route definitions, database queries, cryptographic operations, CI/CD configuration (`.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, etc.), and any files containing secrets-adjacent patterns (environment config, credential setup). Deprioritize: tests, documentation, static assets, generated code. Truncate to ~100,000 characters max. For very large diffs, provide file paths and change summaries instead of raw diff — the Plan agent has `read_file` access and can read the source files directly.
 

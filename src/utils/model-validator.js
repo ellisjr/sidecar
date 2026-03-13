@@ -97,7 +97,7 @@ function filterRelevantModels(models, alias) {
 
   if (filtered.length === 0) { filtered = models; }
 
-  filtered.sort((a, b) => a.name.localeCompare(b.name));
+  filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   return filtered.slice(0, 15);
 }
 

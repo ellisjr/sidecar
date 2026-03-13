@@ -16,8 +16,9 @@ const SIDECAR_HOOK_SCRIPTS = ['pre-bash.sh', 'post-tool-use.sh', 'post-failure.s
 
 function isSidecarHookCommand(command) {
   if (!command || typeof command !== 'string') { return false; }
+  // Require both matching basename AND a sidecar-related path to avoid removing user hooks
   const basename = path.basename(command);
-  return SIDECAR_HOOK_SCRIPTS.includes(basename);
+  return SIDECAR_HOOK_SCRIPTS.includes(basename) && command.includes('claude-sidecar');
 }
 
 function removeHooks() {

@@ -46,13 +46,13 @@ fi
 # Uses printf (not echo) to avoid flag injection with commands starting with -n/-e
 # Includes semicolons in boundary pattern to catch "git add .; git commit"
 IS_COMMIT=false
-if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+\s*)git\s+commit(\s|$)'; then
+if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+[[:space:]]*)git[[:space:]]+commit([[:space:]]|$)'; then
   IS_COMMIT=true
 fi
-if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+\s*)git\s+push(\s|$)'; then
+if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+[[:space:]]*)git[[:space:]]+push([[:space:]]|$)'; then
   IS_COMMIT=true
 fi
-if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+\s*)gh\s+pr\s+create(\s|$)'; then
+if printf '%s\n' "$COMMAND" | grep -qE '(^|[;&|]+[[:space:]]*)gh[[:space:]]+pr[[:space:]]+create([[:space:]]|$)'; then
   IS_COMMIT=true
 fi
 

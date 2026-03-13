@@ -47,6 +47,7 @@
     "lint": "eslint src/",
     "postinstall": "node scripts/postinstall.js",
     "preuninstall": "node scripts/preuninstall.js",
+    "uninstall": "node scripts/preuninstall.js",
     "test:thinking": "node scripts/benchmark-thinking.js",
     "test:thinking:quick": "MODELS=gemini node scripts/benchmark-thinking.js",
     "refresh-models": "node scripts/refresh-model-capabilities.js",

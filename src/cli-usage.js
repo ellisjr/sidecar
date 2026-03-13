@@ -4,11 +4,8 @@
  * Extracted from cli.js to keep files under the 300-line limit.
  */
 
-/**
- * Get usage text
- * @returns {string} Formatted usage/help string
- */
-function getUsage() {
+/** Commands section of usage text */
+function getCommandsUsage() {
   return `
 Usage: sidecar <command> [options]
 
@@ -23,8 +20,12 @@ Commands:
     --api-keys               Open API key setup window
   auto-skills List/enable/disable auto-skills
   update      Update to latest version
-  mcp         Start MCP server (stdio transport)
+  mcp         Start MCP server (stdio transport)`;
+}
 
+/** Start command options */
+function getStartOptionsUsage() {
+  return `
 Options for 'start':
   --model <model>              Optional (uses config default). Model to use:
                                - Short aliases: gemini, opus, gpt (see 'sidecar setup')
@@ -53,8 +54,12 @@ Options for 'start':
   --no-mcp                       Don't inherit MCP servers from parent LLM
   --exclude-mcp <name>           Exclude specific MCP server (repeatable)
   --validate-model             Verify model exists on provider API (opt-in)
-  --position <pos>             Window position: right (default), left, center
+  --position <pos>             Window position: right (default), left, center`;
+}
 
+/** Secondary command options, agent types, and examples */
+function getSecondaryUsage() {
+  return `
 Options for 'list':
   --status <filter>            Filter by status (running, complete)
   --all                        Show all projects
@@ -88,6 +93,14 @@ Examples:
   sidecar resume abc123
   sidecar read abc123 --conversation
 `;
+}
+
+/**
+ * Get usage text
+ * @returns {string} Formatted usage/help string
+ */
+function getUsage() {
+  return getCommandsUsage() + getStartOptionsUsage() + getSecondaryUsage();
 }
 
 module.exports = { getUsage };

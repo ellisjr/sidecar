@@ -172,19 +172,20 @@ function mergeHooks(settings, hooksConfig) {
           existing.hooks && existing.hooks.some((h) => h.command === cmd);
       });
       if (exactMatch) { continue; }
-      // Remove old sidecar entries (same command or same basename with sidecar path)
+      // Remove old sidecar hook commands from existing matchers (upgrade scenario)
       const basename = path.basename(cmd);
-      settings.hooks[event] = settings.hooks[event].filter((existing) => {
-        if (!existing.hooks) { return true; }
-        return !existing.hooks.some((h) => {
-          if (typeof h.command !== 'string') { return false; }
-          // Exact command match (same path, different matcher — upgrade scenario)
-          if (h.command === cmd) { return true; }
-          const hBase = path.basename(h.command);
-          // Only remove if it looks like a sidecar hook (lives in a node_modules path)
-          return hBase === basename && h.command.includes('claude-sidecar');
-        });
-      });
+      settings.hooks[event] = settings.hooks[event]
+        .map((existing) => {
+          if (!existing.hooks) { return existing; }
+          const filtered = existing.hooks.filter((h) => {
+            if (typeof h.command !== 'string') { return true; }
+            if (h.command === cmd) { return false; }
+            const hBase = path.basename(h.command);
+            return !(hBase === basename && h.command.includes('claude-sidecar'));
+          });
+          return { ...existing, hooks: filtered };
+        })
+        .filter((existing) => !existing.hooks || existing.hooks.length > 0);
       settings.hooks[event].push(matcher);
       registered++;
     }

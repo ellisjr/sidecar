@@ -177,12 +177,14 @@ function readProgress(sessionDir) {
       // Use progress updatedAt for lastActivity/lastActivityMs if more recent
       if (progress.updatedAt) {
         const progressTime = new Date(progress.updatedAt);
-        if (!convStat || progressTime > convStat.mtime) {
-          lastActivity = computeLastActivity(progressTime);
-        }
-        const progressMs = Date.now() - progressTime.getTime();
-        if (lastActivityMs === null || progressMs < lastActivityMs) {
-          lastActivityMs = progressMs;
+        if (!isNaN(progressTime.getTime())) {
+          if (!convStat || progressTime > convStat.mtime) {
+            lastActivity = computeLastActivity(progressTime);
+          }
+          const progressMs = Date.now() - progressTime.getTime();
+          if (lastActivityMs === null || progressMs < lastActivityMs) {
+            lastActivityMs = progressMs;
+          }
         }
       }
     } catch {

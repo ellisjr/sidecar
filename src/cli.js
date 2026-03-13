@@ -56,8 +56,11 @@ function parseArgs(argv) {
       }
       const next = inlineValue !== undefined ? undefined : argv[i + 1];
 
-      // Boolean flags (no value expected) — ignore inline values (--on=x is invalid)
+      // Boolean flags (no value expected)
       if (isBooleanFlag(key)) {
+        if (inlineValue !== undefined) {
+          logger.warn(`Flag --${key} is boolean; ignoring value '${inlineValue}'`);
+        }
         result[key] = true;
         continue;
       }

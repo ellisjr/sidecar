@@ -66,14 +66,14 @@ if [ -n "$SAFE_SID" ]; then
                else (.tool_input.file_path // "") end),
         success: (if .tool_name == "Bash" then ((.tool_response.exit_code // 0) == 0)
                   else true end),  # non-Bash tools: hook only fires on success
-        command: (if .tool_name == "Bash" then (.tool_input.command // "") else "" end)
+        command: (if .tool_name == "Bash" then ((.tool_input.command // "")[0:200] | gsub("[A-Za-z0-9+/=]{40,}"; "[REDACTED]")) else "" end)
       }' "$TMP_JSON" 2>/dev/null || echo "")
 
     if [ -n "$EVENT" ]; then
       # Atomically create file with restrictive permissions (noclobber prevents TOCTOU)
       (umask 177 && set -o noclobber && : > "$EVENT_FILE" 2>/dev/null) || true
       # Verify ownership before appending
-      FILE_OWNER=$(stat -f '%u' "$EVENT_FILE" 2>/dev/null || stat -c '%u' "$EVENT_FILE" 2>/dev/null || echo "")
+      FILE_OWNER=$(stat -c '%u' "$EVENT_FILE" 2>/dev/null || stat -f '%u' "$EVENT_FILE" 2>/dev/null || echo "")
       if [ "$FILE_OWNER" = "$(id -u)" ]; then
         echo "$EVENT" >> "$EVENT_FILE"
       fi

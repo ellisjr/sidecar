@@ -60,12 +60,24 @@ if [ "$IS_COMMIT" = "false" ]; then
   exit 0
 fi
 
+# ── Extract session ID for context passing ──────────────────────────
+SESSION_ID=""
+if command -v jq >/dev/null 2>&1; then
+  SESSION_ID=$(jq -r '.session_id // ""' "$TMP_JSON" 2>/dev/null || echo "")
+fi
+
 # ── Output recommendation ────────────────────────────────────────────
 # Use hookSpecificOutput.additionalContext to reach Claude's context
-cat <<'HOOK_OUTPUT'
+# Build JSON safely via jq to include trigger data
+if command -v jq >/dev/null 2>&1; then
+  jq -n --arg cmd "$COMMAND" --arg sid "$SESSION_ID" \
+    '{hookSpecificOutput:{additionalContext:("IMPORTANT: A git commit, push, or PR creation was detected (command: " + ($cmd | .[0:200]) + "). Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill \u0027sidecar-auto-security\u0027. When calling sidecar_start, pass parentSession: \u0027" + $sid + "\u0027 for accurate context matching. If the user has explicitly declined a security scan for these changes, proceed without one.")}}'
+else
+  cat <<'HOOK_OUTPUT'
 {
   "hookSpecificOutput": {
     "additionalContext": "IMPORTANT: A git commit, push, or PR creation was detected. Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill 'sidecar-auto-security'. If the user has explicitly declined a security scan for these changes, proceed without one."
   }
 }
 HOOK_OUTPUT
+fi

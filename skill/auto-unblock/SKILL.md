@@ -98,6 +98,7 @@ model: <user's chosen model, or omit for default>
 agent: "Plan"
 noUi: true
 includeContext: true
+parentSession: <your Claude Code session UUID, if known>
 prompt: <briefing below>
 ```
 
@@ -106,6 +107,7 @@ Notes on parameters:
 - **agent: "Plan"** — headless-safe, read-only. The sidecar's role is to brainstorm, not to execute.
 - **timeout**: Omitted — sidecar uses its platform default (currently 15 minutes). Only override if the user requests a specific timeout.
 - **includeContext: true** — passes the parent conversation history to the sidecar, giving it visibility into prior debugging attempts, error output, and tool results. Note: `includeContext` controls conversation context, not file access — the Plan agent always has `read_file` access regardless.
+- **parentSession**: Pass your Claude Code session UUID if you can determine it (e.g., from `session_id` in hook input, or from the most recent `.jsonl` file in `~/.claude/projects/`). This ensures accurate context matching when multiple sessions are active. Omit if unknown — sidecar will fall back to the most recent session.
 
 If spawning multiple sidecars, launch them all in parallel. Save each task ID per model. In subsequent rounds, track each model's task ID independently — each `sidecar_start` returns a new task ID.
 
@@ -171,6 +173,7 @@ model: <same model as initial round>
 agent: "Plan"
 noUi: true
 includeContext: true
+parentSession: <same session UUID as initial round>
 prompt: <follow-up briefing below>
 ```
 

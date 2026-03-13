@@ -96,12 +96,13 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ] || [ "$TOOL_NAME" = "
     | length > 0' "$TMP_JSON" 2>/dev/null || echo "false")
 
   if [ "$HAS_BMAD" = "true" ]; then
-    # Build JSON safely via jq to avoid injection from filenames with quotes/backslashes
-    jq -n --arg file "$(jq -r '
+    BMAD_FILE=$(jq -r '
       [.tool_input.file_path, (.tool_input.edits[]?.file_path)]
       | map(select(. != null and contains("_bmad-output/")))
-      | first' "$TMP_JSON" 2>/dev/null || echo "_bmad-output/")" \
-      '{hookSpecificOutput:{additionalContext:("A BMAD-METHOD artifact was just written or updated at " + $file + ". Consider running the sidecar-auto-bmad-method-check skill to get a second-opinion review from another model before finalizing this artifact. You can invoke it with: use the Skill tool with skill \u0027sidecar-auto-bmad-method-check\u0027. If the user has already reviewed this artifact or explicitly declined a check, proceed without one.")}}'
+      | first' "$TMP_JSON" 2>/dev/null || echo "_bmad-output/")
+    # Build JSON safely via jq to avoid injection from filenames with quotes/backslashes
+    jq -n --arg file "$BMAD_FILE" --arg tool "$TOOL_NAME" --arg sid "$SESSION_ID" \
+      '{hookSpecificOutput:{additionalContext:("A BMAD-METHOD artifact was just written or updated at " + $file + " (via " + $tool + "). Consider running the sidecar-auto-bmad-method-check skill to get a second-opinion review from another model before finalizing this artifact. You can invoke it with: use the Skill tool with skill \u0027sidecar-auto-bmad-method-check\u0027. When calling sidecar_start, pass parentSession: \u0027" + $sid + "\u0027 for accurate context matching. If the user has already reviewed this artifact or explicitly declined a check, proceed without one.")}}'
     exit 0
   fi
 fi

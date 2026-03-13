@@ -119,6 +119,7 @@ model: <first model from user's selection, or omit for default>
 agent: "Plan"
 noUi: true
 includeContext: true
+parentSession: <your Claude Code session UUID, if known>
 prompt: <briefing below>
 ```
 
@@ -127,6 +128,7 @@ Notes on parameters:
 - **agent: "Plan"** — read-only and headless-safe. The sidecar reviews but does not modify files.
 - **timeout**: Omitted — sidecar uses its platform default (currently 15 minutes). Only override if the user requests a specific timeout.
 - **includeContext: true** — passes the parent conversation history to the sidecar, giving it visibility into the workflow discussion that produced the artifact. The Plan agent also has `read_file` access to the repository for additional context.
+- **parentSession**: Pass your Claude Code session UUID if you can determine it (e.g., from `session_id` in hook input, or from the most recent `.jsonl` file in `~/.claude/projects/`). This ensures accurate context matching when multiple sessions are active. Omit if unknown — sidecar will fall back to the most recent session.
 
 Save the task ID. If the user selected multiple models, subsequent models are spawned in Step 4e **after** the current model's approved changes have been applied to the artifact. This ensures each model reviews the improved version, not the original.
 

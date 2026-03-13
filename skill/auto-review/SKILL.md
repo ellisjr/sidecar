@@ -70,9 +70,9 @@ Run both `git diff` (unstaged changes) and `git diff --cached` (staged changes).
 
 **If the diff exceeds ~500 lines**, do not paste the raw diff. Instead:
 - Run `git diff --stat` and include the output — this gives the reviewer a compact map of the blast radius (which files changed and by how much) before it dives into specifics
-- Set `includeContext: true` in the sidecar call to pass conversation context (what was implemented and why)
 - Provide a summary of what changed in each file
 - The sidecar in Plan mode has full `read_file` access to the repository, so this is sufficient
+- Context is already included via `includeContext: true` (the default)
 
 **If the diff is under ~500 lines**, paste it directly into the briefing.
 
@@ -84,7 +84,8 @@ For **each model** the user selected, call `mcp__sidecar__sidecar_start` with:
 model: <user's chosen model, or omit for default>
 agent: "Plan"
 noUi: true
-includeContext: false
+includeContext: true
+parentSession: <your Claude Code session UUID, if known>
 prompt: <briefing below>
 ```
 
@@ -92,7 +93,8 @@ Notes on parameters:
 - **model**: Use the model(s) the user selected in Step 1. If they just said "1" with no model specified, omit this parameter to use their configured default.
 - **agent: "Plan"** — read-only and headless-safe. Do not change to Chat (stalls in headless mode).
 - **timeout**: Omitted — sidecar uses its platform default (currently 15 minutes). Only override if the user requests a specific timeout.
-- **includeContext: false** — briefing is self-contained. Override to `true` for large diffs (see Step 2) to pass conversation context about what was implemented. Note: the Plan agent always has `read_file` access to the repository regardless of this flag — `includeContext` controls conversation context, not file access.
+- **includeContext: true** — passes conversation history so the reviewer understands WHY changes were made, what the user asked for, and prior decisions. This is critical for code review quality. Note: the Plan agent always has `read_file` access to the repository regardless of this flag — `includeContext` controls conversation context, not file access.
+- **parentSession**: Pass your Claude Code session UUID if you can determine it (e.g., from `session_id` in hook input, or from the most recent `.jsonl` file in `~/.claude/projects/`). This ensures accurate context matching when multiple sessions are active. Omit if unknown — sidecar will fall back to the most recent session.
 
 If spawning multiple sidecars, launch them all in parallel. Save each task ID.
 

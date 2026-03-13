@@ -107,7 +107,7 @@ Notes on parameters:
 - **agent: "Plan"** — headless-safe, read-only. The sidecar's role is to brainstorm, not to execute.
 - **timeout**: Omitted — sidecar uses its platform default (currently 15 minutes). Only override if the user requests a specific timeout.
 - **includeContext: true** — passes the parent conversation history to the sidecar, giving it visibility into prior debugging attempts, error output, and tool results. Note: `includeContext` controls conversation context, not file access — the Plan agent always has `read_file` access regardless.
-- **parentSession**: Pass your Claude Code session UUID if you can determine it (e.g., from `session_id` in hook input, or from the most recent `.jsonl` file in `~/.claude/projects/`). This ensures accurate context matching when multiple sessions are active. Omit if unknown — sidecar will fall back to the most recent session.
+- **parentSession**: Pass your Claude Code session UUID if available (e.g., from `session_id` in hook input). This ensures accurate context matching when multiple sessions are active. If unknown, omit this parameter entirely — do not guess from filesystem.
 
 If spawning multiple sidecars, launch them all in parallel. Save each task ID per model. In subsequent rounds, track each model's task ID independently — each `sidecar_start` returns a new task ID.
 
@@ -177,7 +177,7 @@ parentSession: <same session UUID as initial round>
 prompt: <follow-up briefing below>
 ```
 
-**Why `sidecar_start` instead of `sidecar_continue`:** In the current sidecar implementation, headless `sidecar_continue` forces Build mode (full write access), which is inappropriate for a brainstorming-only workflow. Using fresh `sidecar_start` with `agent: "Plan"` keeps each round read-only. The follow-up briefing includes full context from prior rounds, so conversation continuity is preserved in the prompt itself. Save the new task ID returned by each round for status polling.
+**Why `sidecar_start` instead of `sidecar_continue`:** Each brainstorming round should be an independent read-only session. Using fresh `sidecar_start` with `agent: "Plan"` ensures each round is isolated and read-only, avoiding any risk of the sidecar making unintended changes. The follow-up briefing includes full context from prior rounds, so conversation continuity is preserved in the prompt itself. Save the new task ID returned by each round for status polling.
 
 After spawning, poll status using `mcp__sidecar__sidecar_status` (following the polling cadence indicated by `sidecar_status` responses) while `running`; treat `complete`, `timeout`, `crashed`, `error`, and `aborted` as terminal. Once terminal, read with `mcp__sidecar__sidecar_read`.
 

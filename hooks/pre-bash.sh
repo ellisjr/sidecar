@@ -70,13 +70,25 @@ fi
 # Use hookSpecificOutput.additionalContext to reach Claude's context
 # Build JSON safely via jq to include trigger data
 if command -v jq >/dev/null 2>&1; then
-  jq -n --arg cmd "$COMMAND" --arg sid "$SESSION_ID" \
-    '{hookSpecificOutput:{additionalContext:("IMPORTANT: A git commit, push, or PR creation was detected (command: " + ($cmd | .[0:200]) + "). Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill \u0027sidecar-auto-security\u0027. When calling sidecar_start, pass parentSession: \u0027" + $sid + "\u0027 for accurate context matching. If the user has explicitly declined a security scan for these changes, proceed without one.")}}'
+  # Determine git operation type from command (don't echo raw command — may contain credentials)
+  GIT_OP="git commit, push, or PR creation"
+  if printf '%s\n' "$COMMAND" | grep -qE 'git[[:space:]]+commit'; then GIT_OP="git commit"
+  elif printf '%s\n' "$COMMAND" | grep -qE 'git[[:space:]]+push'; then GIT_OP="git push"
+  elif printf '%s\n' "$COMMAND" | grep -qE 'gh[[:space:]]+pr[[:space:]]+create'; then GIT_OP="gh pr create"
+  fi
+
+  if [ -n "$SESSION_ID" ]; then
+    jq -n --arg op "$GIT_OP" --arg sid "$SESSION_ID" \
+      '{hookSpecificOutput:{additionalContext:("IMPORTANT: A " + $op + " was detected. Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill \u0027sidecar-auto-security\u0027. When calling sidecar_start, pass parentSession: \u0027" + $sid + "\u0027 for accurate context matching. If the user has explicitly declined a security scan for these changes, proceed without one.")}}'
+  else
+    jq -n --arg op "$GIT_OP" \
+      '{hookSpecificOutput:{additionalContext:("IMPORTANT: A " + $op + " was detected. Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill \u0027sidecar-auto-security\u0027. If the user has explicitly declined a security scan for these changes, proceed without one.")}}'
+  fi
 else
   cat <<'HOOK_OUTPUT'
 {
   "hookSpecificOutput": {
-    "additionalContext": "IMPORTANT: A git commit, push, or PR creation was detected. Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill 'sidecar-auto-security'. If the user has explicitly declined a security scan for these changes, proceed without one."
+    "additionalContext": "IMPORTANT: A git commit, push, or PR creation was detected. Before proceeding, consider running the sidecar-auto-security skill to scan these changes for security vulnerabilities (hardcoded secrets, injection flaws, auth bypass). You can invoke it with: use the Skill tool with skill 'sidecar-auto-security'. If the user has explicitly declined a security scan for these changes, proceed without one. Note: parentSession could not be determined — the sidecar will use the most recent session."
   }
 }
 HOOK_OUTPUT

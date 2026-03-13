@@ -217,8 +217,13 @@ function registerHooks() {
   let settings = {};
   try {
     settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-  } catch {
-    // File doesn't exist or invalid — start fresh
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      // File exists but is malformed — don't overwrite, skip hook registration
+      console.error(`[claude-sidecar] Warning: ${settingsPath} is malformed, skipping hook registration.`);
+      return;
+    }
+    // File doesn't exist — start fresh
   }
 
   const registered = mergeHooks(settings, hooksConfig);
